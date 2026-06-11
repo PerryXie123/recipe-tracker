@@ -27,29 +27,9 @@ create table if not exists public.recipe_ingredients (
   sort_order integer not null default 0
 );
 
-create table if not exists public.meal_plans (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  target_calories integer,
-  target_protein numeric,
-  days integer not null default 1,
-  created_at timestamptz not null default now()
-);
-
-create table if not exists public.meal_plan_items (
-  id uuid primary key default gen_random_uuid(),
-  meal_plan_id uuid not null references public.meal_plans(id) on delete cascade,
-  recipe_id uuid not null references public.recipes(id) on delete restrict,
-  day_number integer not null default 1,
-  meal_slot text not null,
-  servings numeric not null default 1
-);
-
 alter table public.foods enable row level security;
 alter table public.recipes enable row level security;
 alter table public.recipe_ingredients enable row level security;
-alter table public.meal_plans enable row level security;
-alter table public.meal_plan_items enable row level security;
 
 create policy "Service role manages foods" on public.foods
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
@@ -58,12 +38,6 @@ create policy "Service role manages recipes" on public.recipes
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 create policy "Service role manages recipe ingredients" on public.recipe_ingredients
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
-
-create policy "Service role manages meal plans" on public.meal_plans
-  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
-
-create policy "Service role manages meal plan items" on public.meal_plan_items
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
 insert into public.foods (name, calories_per_unit, protein_per_unit, unit_label, notes)
