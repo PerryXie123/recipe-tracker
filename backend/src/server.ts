@@ -54,6 +54,16 @@ type NewFoodPayload = {
   notes?: string | null;
 };
 
+type NewRecipePayload = {
+  name?: string;
+  category?: string | null;
+  target_plan?: string | null;
+  ingredients?: Array<{
+    food_id?: string;
+    quantity?: number | string;
+  }>;
+};
+
 type SupabaseRecipe = {
   id: string;
   name: string;
@@ -68,7 +78,7 @@ type SupabaseIngredient = {
   foods: Food;
 };
 
-const demoFoods: Food[] = [
+let demoFoods: Food[] = [
   { id: "demo-egg", name: "Egg", calories_per_unit: 75, kj_per_unit: 313.8, protein_per_unit: 6, unit_label: "serving" },
   { id: "demo-oats", name: "Rolled oats", calories_per_unit: 382.4, kj_per_unit: 1600, protein_per_unit: 13.4, unit_label: "100g" },
   { id: "demo-chicken", name: "Chicken breast", calories_per_unit: 165, kj_per_unit: 690.4, protein_per_unit: 31, unit_label: "100g" },
@@ -76,7 +86,7 @@ const demoFoods: Food[] = [
   { id: "demo-yoghurt", name: "Greek yoghurt", calories_per_unit: 102.8, kj_per_unit: 430.1, protein_per_unit: 4.6, unit_label: "100g" }
 ];
 
-const demoRecipes: Recipe[] = [
+let demoRecipes: Recipe[] = [
   {
     id: "demo-oats-recipe",
     name: "Overnight oats",
@@ -143,7 +153,7 @@ function sendJson(response: ServerResponse, status: number, payload: unknown) {
   response.end(JSON.stringify(payload));
 }
 
-function readBody(request: IncomingMessage): Promise<NewFoodPayload> {
+function readBody<T>(request: IncomingMessage): Promise<T> {
   return new Promise((resolve, reject) => {
     let body = "";
     request.on("data", (chunk) => {
@@ -202,7 +212,7 @@ async function getFoods() {
 
 async function getRecipes(): Promise<RecipeWithTotals[]> {
   if (!supabaseUrl || !supabaseKey) {
-    return demoRecipes.map(withRecipeTotals);
+    return demoRecipes.map(getDemoRecipeWithIngredientTotals);
   }
 
   const recipes = await supabase<SupabaseRecipe[]>("recipes?select=*&order=name.asc");
@@ -227,6 +237,26 @@ async function getRecipes(): Promise<RecipeWithTotals[]> {
 
     return withRecipeTotals({ ...recipe, ingredients: rows });
   });
+}
+
+function getDemoRecipeWithIngredientTotals(recipe: Recipe): RecipeWithTotals {
+  const ingredients = recipe.ingredients.map((ingredient) => {
+    const food = demoFoods.find((item) => item.id === ingredient.food_id);
+    if (!food) {
+      return ingredient;
+    }
+
+    return {
+      food_id: food.id,
+      food_name: food.name,
+      quantity: ingredient.quantity,
+      calories: round1(food.calories_per_unit * ingredient.quantity),
+      kj: round1(food.kj_per_unit * ingredient.quantity),
+      protein: round1(food.protein_per_unit * ingredient.quantity)
+    };
+  });
+
+  return withRecipeTotals({ ...recipe, ingredients });
 }
 
 function withRecipeTotals(recipe: Recipe): RecipeWithTotals {
@@ -264,7 +294,9 @@ async function createFood(payload: NewFoodPayload): Promise<Food> {
   };
 
   if (!supabaseUrl || !supabaseKey) {
-    return { ...food, id: `demo-${Date.now()}` };
+    const created = { ...food, id: `demo-food-${Date.now()}` };
+    demoFoods = [...demoFoods, created];
+    return created;
   }
 
   const [created] = await supabase<Food[]>("foods", {
@@ -277,6 +309,74 @@ async function createFood(payload: NewFoodPayload): Promise<Food> {
   }
 
   return created;
+}
+
+async function createRecipe(payload: NewRecipePayload): Promise<RecipeWithTotals> {
+  const name = payload.name?.trim();
+  const ingredients = (payload.ingredients || [])
+    .map((ingredient, index) => ({
+      food_id: ingredient.food_id,
+      quantity: Number(ingredient.quantity),
+      sort_order: index + 1
+    }))
+    .filter((ingredient) => ingredient.food_id && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0);
+
+  if (!name || ingredients.length === 0) {
+    throw Object.assign(new Error("Recipe name and at least one ingredient amount are required"), {
+      code: "BAD_REQUEST"
+    });
+  }
+
+  if (!supabaseUrl || !supabaseKey) {
+    const recipe: Recipe = {
+      id: `demo-recipe-${Date.now()}`,
+      name,
+      category: payload.category || "Meal",
+      target_plan: payload.target_plan || null,
+      ingredients: ingredients.map((ingredient) => ({
+        food_id: ingredient.food_id as string,
+        food_name: "",
+        quantity: ingredient.quantity,
+        calories: 0,
+        kj: 0,
+        protein: 0
+      }))
+    };
+    demoRecipes = [...demoRecipes, recipe];
+    return getDemoRecipeWithIngredientTotals(recipe);
+  }
+
+  const [createdRecipe] = await supabase<SupabaseRecipe[]>("recipes", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      category: payload.category || null,
+      target_plan: payload.target_plan || null
+    })
+  });
+
+  if (!createdRecipe) {
+    throw new Error("Supabase did not return the created recipe");
+  }
+
+  await supabase("recipe_ingredients", {
+    method: "POST",
+    body: JSON.stringify(
+      ingredients.map((ingredient) => ({
+        recipe_id: createdRecipe.id,
+        food_id: ingredient.food_id,
+        quantity: ingredient.quantity,
+        sort_order: ingredient.sort_order
+      }))
+    )
+  });
+
+  const [recipeWithTotals] = (await getRecipes()).filter((recipe) => recipe.id === createdRecipe.id);
+  if (!recipeWithTotals) {
+    throw new Error("Created recipe could not be loaded");
+  }
+
+  return recipeWithTotals;
 }
 
 function round1(value: number) {
@@ -297,11 +397,15 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
     }
 
     if (request.method === "POST" && url.pathname === "/api/foods") {
-      return sendJson(response, 201, await createFood(await readBody(request)));
+      return sendJson(response, 201, await createFood(await readBody<NewFoodPayload>(request)));
     }
 
     if (request.method === "GET" && url.pathname === "/api/recipes") {
       return sendJson(response, 200, await getRecipes());
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/recipes") {
+      return sendJson(response, 201, await createRecipe(await readBody<NewRecipePayload>(request)));
     }
 
     return sendJson(response, 404, { error: "Not found" });

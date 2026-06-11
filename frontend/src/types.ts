@@ -40,3 +40,13 @@ export type NewFood = {
   protein_per_unit: number;
   unit_label: string;
 };
+
+export type NewRecipe = {
+  name: string;
+  category: string;
+  target_plan: string;
+  ingredients: Array<{
+    food_id: string;
+    quantity: number;
+  }>;
+};

@@ -1,4 +1,4 @@
-import type { Food, Health, NewFood, Recipe } from "./types";
+import type { Food, Health, NewFood, NewRecipe, Recipe } from "./types";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(path, options);
@@ -28,5 +28,13 @@ export function createFood(food: NewFood) {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(food)
+  });
+}
+
+export function createRecipe(recipe: NewRecipe) {
+  return request<Recipe>("/api/recipes", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(recipe)
   });
 }

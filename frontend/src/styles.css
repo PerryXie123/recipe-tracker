@@ -145,6 +145,12 @@ h3 {
   gap: 22px;
 }
 
+.meals-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 22px;
+}
+
 .section-header {
   display: flex;
   align-items: end;
@@ -242,6 +248,31 @@ select {
   cursor: pointer;
 }
 
+.form-panel .secondary-button {
+  color: var(--accent-dark);
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.form-panel .secondary-button:hover {
+  background: rgba(38, 117, 95, 0.1);
+}
+
+.form-panel .icon-button {
+  align-self: end;
+  width: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0;
+  color: var(--accent-dark);
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.form-panel .icon-button:hover {
+  background: rgba(166, 79, 43, 0.12);
+}
+
 .form-panel button:hover {
   background: var(--accent-dark);
 }
@@ -260,13 +291,14 @@ select {
 
 .meal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 14px;
 }
 
 .meal-card {
   display: grid;
   gap: 14px;
+  min-width: 0;
   padding: 16px;
   background: #fbfcf8;
   border: 1px solid var(--line);
@@ -278,6 +310,11 @@ select {
   align-items: start;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
+}
+
+.meal-card header > div {
+  min-width: 0;
 }
 
 .meal-card header p {
@@ -288,11 +325,12 @@ select {
 
 .macro-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
 .macro-row div {
+  min-width: 0;
   padding: 12px;
   background: #ffffff;
   border: 1px solid var(--line);
@@ -308,12 +346,27 @@ select {
 .macro-row strong {
   display: block;
   margin-top: 3px;
-  font-size: 22px;
+  overflow-wrap: anywhere;
+  font-size: 20px;
 }
 
 .ingredient-list {
   margin: 0;
   padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+
+.builder-list {
+  display: grid;
+  gap: 12px;
+}
+
+.builder-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 120px) 42px;
+  gap: 10px;
+  align-items: end;
+  min-width: 0;
 }
 
 @media (max-width: 860px) {
@@ -327,7 +380,8 @@ select {
     min-width: 0;
   }
 
-  .ingredients-layout {
+  .ingredients-layout,
+  .meals-layout {
     grid-template-columns: 1fr;
   }
 }
@@ -351,7 +405,12 @@ select {
   }
 
   .form-grid,
-  .macro-row {
+  .macro-row,
+  .builder-row {
     grid-template-columns: 1fr;
+  }
+
+  .form-panel .icon-button {
+    width: 100%;
   }
 }

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { createFood, getFoods, getHealth, getRecipes } from "./api";
-import type { Food, Health, NewFood, Recipe } from "./types";
+import { createFood, createRecipe, getFoods, getHealth, getRecipes } from "./api";
+import type { Food, Health, NewFood, NewRecipe, Recipe } from "./types";
 
 type Tab = "ingredients" | "meals";
 
@@ -10,6 +10,13 @@ const initialFood: NewFood = {
   kj_per_unit: 0,
   protein_per_unit: 0,
   unit_label: "100g"
+};
+
+const initialRecipe: NewRecipe = {
+  name: "",
+  category: "Meal",
+  target_plan: "",
+  ingredients: [{ food_id: "", quantity: 1 }]
 };
 
 const KJ_PER_CALORIE = 4.184;
@@ -28,8 +35,11 @@ export function App() {
   const [foods, setFoods] = useState<Food[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [newFood, setNewFood] = useState<NewFood>(initialFood);
+  const [newRecipe, setNewRecipe] = useState<NewRecipe>(initialRecipe);
   const [message, setMessage] = useState("Loading recipe tracker...");
+  const [recipeMessage, setRecipeMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingRecipe, setIsSavingRecipe] = useState(false);
 
   async function refresh() {
     const [nextFoods, nextRecipes] = await Promise.all([getFoods(), getRecipes()]);
@@ -63,7 +73,7 @@ export function App() {
     );
   }, [recipes]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleFoodSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
     setMessage("Adding ingredient...");
@@ -78,6 +88,49 @@ export function App() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleRecipeSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingRecipe(true);
+    setRecipeMessage("Adding meal...");
+
+    try {
+      await createRecipe(newRecipe);
+      setNewRecipe(initialRecipe);
+      await refresh();
+      setRecipeMessage("Meal added.");
+    } catch (error) {
+      setRecipeMessage(error instanceof Error ? error.message : "Could not add meal.");
+    } finally {
+      setIsSavingRecipe(false);
+    }
+  }
+
+  function updateRecipeIngredient(index: number, values: Partial<NewRecipe["ingredients"][number]>) {
+    setNewRecipe({
+      ...newRecipe,
+      ingredients: newRecipe.ingredients.map((ingredient, ingredientIndex) =>
+        ingredientIndex === index ? { ...ingredient, ...values } : ingredient
+      )
+    });
+  }
+
+  function addRecipeIngredient() {
+    setNewRecipe({
+      ...newRecipe,
+      ingredients: [...newRecipe.ingredients, { food_id: "", quantity: 1 }]
+    });
+  }
+
+  function removeRecipeIngredient(index: number) {
+    setNewRecipe({
+      ...newRecipe,
+      ingredients:
+        newRecipe.ingredients.length === 1
+          ? [{ food_id: "", quantity: 1 }]
+          : newRecipe.ingredients.filter((_, ingredientIndex) => ingredientIndex !== index)
+    });
   }
 
   return (
@@ -157,7 +210,7 @@ export function App() {
               </div>
             </div>
 
-            <form className="form-panel" onSubmit={handleSubmit}>
+            <form className="form-panel" onSubmit={handleFoodSubmit}>
               <div>
                 <p className="eyebrow">Quick add</p>
                 <h2>Add ingredient</h2>
@@ -250,56 +303,159 @@ export function App() {
             </form>
           </section>
         ) : (
-          <section className="tab-panel" role="tabpanel">
-            <div className="section-header">
+          <section className="tab-panel meals-layout" role="tabpanel">
+            <div>
+              <div className="section-header">
+                <div>
+                  <p className="eyebrow">Calculated from ingredients</p>
+                  <h2>Meals</h2>
+                </div>
+                <div className="summary-row">
+                  <span>{recipes.length} meals</span>
+                  <span>{formatNumber(mealTotals.calories)} cal</span>
+                  <span>{formatNumber(mealTotals.kj)} kJ</span>
+                  <span>{formatNumber(mealTotals.protein)}g protein</span>
+                </div>
+              </div>
+
+              <div className="meal-grid" aria-live="polite">
+                {recipes.map((recipe) => (
+                  <article className="meal-card" key={recipe.id}>
+                    <header>
+                      <div>
+                        <h3>{recipe.name}</h3>
+                        <p>{recipe.target_plan || "No target set"}</p>
+                      </div>
+                      <span className="count-pill">{recipe.category || "Meal"}</span>
+                    </header>
+
+                    <div className="macro-row">
+                      <div>
+                        <span>Calories</span>
+                        <strong>{formatNumber(recipe.calories)}</strong>
+                      </div>
+                      <div>
+                        <span>kJ</span>
+                        <strong>{formatNumber(recipe.kj)}</strong>
+                      </div>
+                      <div>
+                        <span>Protein</span>
+                        <strong>{formatNumber(recipe.protein)}g</strong>
+                      </div>
+                    </div>
+
+                    <ul className="ingredient-list">
+                      {recipe.ingredients.map((ingredient) => (
+                        <li key={`${recipe.id}-${ingredient.food_id}`}>
+                          {ingredient.food_name}: {formatNumber(ingredient.quantity)} units
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <form className="form-panel" onSubmit={handleRecipeSubmit}>
               <div>
-                <p className="eyebrow">Calculated from ingredients</p>
-                <h2>Meals</h2>
+                <p className="eyebrow">Meal builder</p>
+                <h2>Add meal</h2>
               </div>
-              <div className="summary-row">
-                <span>{recipes.length} meals</span>
-                <span>{formatNumber(mealTotals.calories)} cal</span>
-                <span>{formatNumber(mealTotals.kj)} kJ</span>
-                <span>{formatNumber(mealTotals.protein)}g protein</span>
+
+              <label>
+                <span>Name</span>
+                <input
+                  value={newRecipe.name}
+                  onChange={(event) => setNewRecipe({ ...newRecipe, name: event.target.value })}
+                  placeholder="e.g. Chicken rice bowl"
+                  required
+                />
+              </label>
+
+              <div className="form-grid">
+                <label>
+                  <span>Category</span>
+                  <select
+                    value={newRecipe.category}
+                    onChange={(event) => setNewRecipe({ ...newRecipe, category: event.target.value })}
+                  >
+                    <option value="Meal">Meal</option>
+                    <option value="Breakfast">Breakfast</option>
+                    <option value="Lunch">Lunch</option>
+                    <option value="Dinner">Dinner</option>
+                    <option value="Snack">Snack</option>
+                  </select>
+                </label>
+
+                <label>
+                  <span>Target</span>
+                  <input
+                    value={newRecipe.target_plan}
+                    onChange={(event) => setNewRecipe({ ...newRecipe, target_plan: event.target.value })}
+                    placeholder="Optional"
+                  />
+                </label>
               </div>
-            </div>
 
-            <div className="meal-grid" aria-live="polite">
-              {recipes.map((recipe) => (
-                <article className="meal-card" key={recipe.id}>
-                  <header>
-                    <div>
-                      <h3>{recipe.name}</h3>
-                      <p>{recipe.target_plan || "No target set"}</p>
-                    </div>
-                    <span className="count-pill">{recipe.category || "Meal"}</span>
-                  </header>
+              <div className="builder-list">
+                {newRecipe.ingredients.map((ingredient, index) => {
+                  const selectedFood = foods.find((food) => food.id === ingredient.food_id);
+                  return (
+                    <div className="builder-row" key={index}>
+                      <label>
+                        <span>Ingredient</span>
+                        <select
+                          value={ingredient.food_id}
+                          onChange={(event) => updateRecipeIngredient(index, { food_id: event.target.value })}
+                          required
+                        >
+                          <option value="">Choose ingredient</option>
+                          {foods.map((food) => (
+                            <option value={food.id} key={food.id}>
+                              {food.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
 
-                  <div className="macro-row">
-                    <div>
-                      <span>Calories</span>
-                      <strong>{formatNumber(recipe.calories)}</strong>
-                    </div>
-                    <div>
-                      <span>kJ</span>
-                      <strong>{formatNumber(recipe.kj)}</strong>
-                    </div>
-                    <div>
-                      <span>Protein</span>
-                      <strong>{formatNumber(recipe.protein)}g</strong>
-                    </div>
-                  </div>
+                      <label>
+                        <span>Amount {selectedFood ? `(${selectedFood.unit_label})` : ""}</span>
+                        <input
+                          value={ingredient.quantity}
+                          onChange={(event) =>
+                            updateRecipeIngredient(index, { quantity: Number(event.target.value) })
+                          }
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          required
+                        />
+                      </label>
 
-                  <ul className="ingredient-list">
-                    {recipe.ingredients.map((ingredient) => (
-                      <li key={`${recipe.id}-${ingredient.food_id}`}>
-                        {ingredient.food_name}: {formatNumber(ingredient.quantity)} units
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </div>
+                      <button
+                        className="icon-button"
+                        type="button"
+                        aria-label="Remove ingredient"
+                        onClick={() => removeRecipeIngredient(index)}
+                      >
+                        -
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button className="secondary-button" type="button" onClick={addRecipeIngredient}>
+                Add ingredient
+              </button>
+
+              <button type="submit" disabled={isSavingRecipe || foods.length === 0}>
+                {isSavingRecipe ? "Adding..." : "Add meal"}
+              </button>
+              <p className="form-message" role="status">
+                {foods.length === 0 ? "Add at least one ingredient first." : recipeMessage}
+              </p>
+            </form>
           </section>
         )}
       </section>
