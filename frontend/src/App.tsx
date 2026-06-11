@@ -1,5 +1,15 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { createFood, createRecipe, getFoods, getHealth, getRecipes } from "./api";
+import {
+  createFood,
+  createRecipe,
+  deleteFood,
+  deleteRecipe,
+  getFoods,
+  getHealth,
+  getRecipes,
+  updateFood,
+  updateRecipe
+} from "./api";
 import type { Food, Health, NewFood, NewRecipe, Recipe } from "./types";
 
 type Tab = "ingredients" | "meals";
@@ -15,8 +25,8 @@ const initialFood: NewFood = {
 const initialRecipe: NewRecipe = {
   name: "",
   category: "Meal",
-  target_plan: "",
-  ingredients: [{ food_id: "", quantity: 1 }]
+  total_weight_g: 100,
+  ingredients: [{ food_id: "", weight_g: 100 }]
 };
 
 const KJ_PER_CALORIE = 4.184;
@@ -36,6 +46,10 @@ export function App() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [newFood, setNewFood] = useState<NewFood>(initialFood);
   const [newRecipe, setNewRecipe] = useState<NewRecipe>(initialRecipe);
+  const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
+  const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
+  const [isTotalWeightManual, setIsTotalWeightManual] = useState(false);
+  const [portionWeights, setPortionWeights] = useState<Record<string, number>>({});
   const [message, setMessage] = useState("Loading recipe tracker...");
   const [recipeMessage, setRecipeMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -67,24 +81,34 @@ export function App() {
       (totals, recipe) => ({
         calories: totals.calories + recipe.calories,
         kj: totals.kj + recipe.kj,
-        protein: totals.protein + recipe.protein
+        protein: totals.protein + recipe.protein,
+        weight: totals.weight + Number(recipe.total_weight_g || 0)
       }),
-      { calories: 0, kj: 0, protein: 0 }
+      { calories: 0, kj: 0, protein: 0, weight: 0 }
     );
   }, [recipes]);
+
+  const ingredientWeightTotal = useMemo(() => {
+    return round1(newRecipe.ingredients.reduce((sum, ingredient) => sum + Number(ingredient.weight_g || 0), 0));
+  }, [newRecipe.ingredients]);
 
   async function handleFoodSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
-    setMessage("Adding ingredient...");
+    setMessage(editingFoodId ? "Saving ingredient..." : "Adding ingredient...");
 
     try {
-      await createFood(newFood);
-      setNewFood(initialFood);
+      if (editingFoodId) {
+        await updateFood(editingFoodId, newFood);
+        setMessage("Ingredient saved.");
+      } else {
+        await createFood(newFood);
+        setMessage("Ingredient added.");
+      }
+      resetFoodForm();
       await refresh();
-      setMessage("Ingredient added.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not add ingredient.");
+      setMessage(error instanceof Error ? error.message : "Could not save ingredient.");
     } finally {
       setIsSaving(false);
     }
@@ -93,44 +117,159 @@ export function App() {
   async function handleRecipeSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSavingRecipe(true);
-    setRecipeMessage("Adding meal...");
+    setRecipeMessage(editingRecipeId ? "Saving meal..." : "Adding meal...");
 
     try {
-      await createRecipe(newRecipe);
-      setNewRecipe(initialRecipe);
+      if (editingRecipeId) {
+        await updateRecipe(editingRecipeId, newRecipe);
+        setRecipeMessage("Meal saved.");
+      } else {
+        await createRecipe(newRecipe);
+        setRecipeMessage("Meal added.");
+      }
+      resetRecipeForm();
       await refresh();
-      setRecipeMessage("Meal added.");
     } catch (error) {
-      setRecipeMessage(error instanceof Error ? error.message : "Could not add meal.");
+      setRecipeMessage(error instanceof Error ? error.message : "Could not save meal.");
     } finally {
       setIsSavingRecipe(false);
     }
   }
 
+  function editFood(food: Food) {
+    setEditingFoodId(food.id);
+    setNewFood({
+      name: food.name,
+      calories_per_unit: Number(food.calories_per_unit),
+      kj_per_unit: Number(food.kj_per_unit),
+      protein_per_unit: Number(food.protein_per_unit),
+      unit_label: "100g"
+    });
+    setMessage("");
+  }
+
+  async function handleFoodDelete(food: Food) {
+    if (!window.confirm(`Delete ${food.name}?`)) {
+      return;
+    }
+
+    setMessage("Deleting ingredient...");
+    try {
+      await deleteFood(food.id);
+      if (editingFoodId === food.id) {
+        resetFoodForm();
+      }
+      await refresh();
+      setMessage("Ingredient deleted.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not delete ingredient.");
+    }
+  }
+
+  function resetFoodForm() {
+    setEditingFoodId(null);
+    setNewFood(initialFood);
+  }
+
+  function editRecipe(recipe: Recipe) {
+    setEditingRecipeId(recipe.id);
+    setNewRecipe({
+      name: recipe.name,
+      category: recipe.category || "Meal",
+      total_weight_g: Number(recipe.total_weight_g || 0),
+      ingredients:
+        recipe.ingredients.length > 0
+          ? recipe.ingredients.map((ingredient) => ({
+              food_id: ingredient.food_id,
+              weight_g: Number(ingredient.weight_g)
+            }))
+          : [{ food_id: "", weight_g: 100 }]
+    });
+    setIsTotalWeightManual(true);
+    setRecipeMessage("");
+  }
+
+  async function handleRecipeDelete(recipe: Recipe) {
+    if (!window.confirm(`Delete ${recipe.name}?`)) {
+      return;
+    }
+
+    setRecipeMessage("Deleting meal...");
+    try {
+      await deleteRecipe(recipe.id);
+      if (editingRecipeId === recipe.id) {
+        resetRecipeForm();
+      }
+      await refresh();
+      setRecipeMessage("Meal deleted.");
+    } catch (error) {
+      setRecipeMessage(error instanceof Error ? error.message : "Could not delete meal.");
+    }
+  }
+
+  function resetRecipeForm() {
+    setEditingRecipeId(null);
+    setNewRecipe(initialRecipe);
+    setIsTotalWeightManual(false);
+  }
+
   function updateRecipeIngredient(index: number, values: Partial<NewRecipe["ingredients"][number]>) {
+    const ingredients = newRecipe.ingredients.map((ingredient, ingredientIndex) =>
+      ingredientIndex === index ? { ...ingredient, ...values } : ingredient
+    );
+    const nextWeight = round1(ingredients.reduce((sum, ingredient) => sum + Number(ingredient.weight_g || 0), 0));
     setNewRecipe({
       ...newRecipe,
-      ingredients: newRecipe.ingredients.map((ingredient, ingredientIndex) =>
-        ingredientIndex === index ? { ...ingredient, ...values } : ingredient
-      )
+      ingredients,
+      total_weight_g: isTotalWeightManual ? newRecipe.total_weight_g : nextWeight
     });
   }
 
   function addRecipeIngredient() {
+    const ingredients = [...newRecipe.ingredients, { food_id: "", weight_g: 100 }];
+    const nextWeight = round1(ingredients.reduce((sum, ingredient) => sum + Number(ingredient.weight_g || 0), 0));
     setNewRecipe({
       ...newRecipe,
-      ingredients: [...newRecipe.ingredients, { food_id: "", quantity: 1 }]
+      ingredients,
+      total_weight_g: isTotalWeightManual ? newRecipe.total_weight_g : nextWeight
     });
   }
 
   function removeRecipeIngredient(index: number) {
+    const ingredients =
+      newRecipe.ingredients.length === 1
+        ? [{ food_id: "", weight_g: 100 }]
+        : newRecipe.ingredients.filter((_, ingredientIndex) => ingredientIndex !== index);
+    const nextWeight = round1(ingredients.reduce((sum, ingredient) => sum + Number(ingredient.weight_g || 0), 0));
     setNewRecipe({
       ...newRecipe,
-      ingredients:
-        newRecipe.ingredients.length === 1
-          ? [{ food_id: "", quantity: 1 }]
-          : newRecipe.ingredients.filter((_, ingredientIndex) => ingredientIndex !== index)
+      ingredients,
+      total_weight_g: isTotalWeightManual ? newRecipe.total_weight_g : nextWeight
     });
+  }
+
+  function regenerateTotalWeight() {
+    setNewRecipe({ ...newRecipe, total_weight_g: ingredientWeightTotal });
+    setIsTotalWeightManual(false);
+  }
+
+  function getPortionWeight(recipe: Recipe) {
+    const savedWeight = Number(recipe.total_weight_g || 0);
+    const portionWeight = portionWeights[recipe.id];
+    return Number.isFinite(portionWeight) && portionWeight > 0 ? portionWeight : Math.min(100, savedWeight || 100);
+  }
+
+  function getPortionTotals(recipe: Recipe) {
+    const totalWeight = Number(recipe.total_weight_g || 0);
+    const portionWeight = getPortionWeight(recipe);
+    const multiplier = totalWeight > 0 ? portionWeight / totalWeight : 0;
+
+    return {
+      weight: portionWeight,
+      calories: recipe.calories * multiplier,
+      kj: recipe.kj * multiplier,
+      protein: recipe.protein * multiplier
+    };
   }
 
   return (
@@ -192,7 +331,8 @@ export function App() {
                       <th>Calories</th>
                       <th>kJ</th>
                       <th>Protein</th>
-                      <th>Unit</th>
+                      <th>Basis</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -202,7 +342,17 @@ export function App() {
                         <td>{formatNumber(food.calories_per_unit)}</td>
                         <td>{formatNumber(food.kj_per_unit)}</td>
                         <td>{formatNumber(food.protein_per_unit)}g</td>
-                        <td>{food.unit_label}</td>
+                        <td>per 100g</td>
+                        <td>
+                          <div className="action-row">
+                            <button className="text-button" type="button" onClick={() => editFood(food)}>
+                              Edit
+                            </button>
+                            <button className="text-button danger" type="button" onClick={() => handleFoodDelete(food)}>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -213,7 +363,7 @@ export function App() {
             <form className="form-panel" onSubmit={handleFoodSubmit}>
               <div>
                 <p className="eyebrow">Quick add</p>
-                <h2>Add ingredient</h2>
+                <h2>{editingFoodId ? "Edit ingredient" : "Add ingredient"}</h2>
               </div>
 
               <label>
@@ -282,21 +432,19 @@ export function App() {
                 </label>
               </div>
 
-              <label>
+              <div className="fixed-field">
                 <span>Unit</span>
-                <select
-                  value={newFood.unit_label}
-                  onChange={(event) => setNewFood({ ...newFood, unit_label: event.target.value })}
-                >
-                  <option value="100g">100g</option>
-                  <option value="serving">serving</option>
-                  <option value="item">item</option>
-                </select>
-              </label>
+                <strong>100g</strong>
+              </div>
 
               <button type="submit" disabled={isSaving}>
-                {isSaving ? "Adding..." : "Add ingredient"}
+                {isSaving ? "Saving..." : editingFoodId ? "Save ingredient" : "Add ingredient"}
               </button>
+              {editingFoodId ? (
+                <button className="secondary-button" type="button" onClick={resetFoodForm}>
+                  Cancel edit
+                </button>
+              ) : null}
               <p className="form-message" role="status">
                 {message}
               </p>
@@ -315,51 +463,98 @@ export function App() {
                   <span>{formatNumber(mealTotals.calories)} cal</span>
                   <span>{formatNumber(mealTotals.kj)} kJ</span>
                   <span>{formatNumber(mealTotals.protein)}g protein</span>
+                  <span>{formatNumber(mealTotals.weight)}g total</span>
                 </div>
               </div>
 
               <div className="meal-grid" aria-live="polite">
-                {recipes.map((recipe) => (
-                  <article className="meal-card" key={recipe.id}>
-                    <header>
-                      <div>
-                        <h3>{recipe.name}</h3>
-                        <p>{recipe.target_plan || "No target set"}</p>
-                      </div>
-                      <span className="count-pill">{recipe.category || "Meal"}</span>
-                    </header>
+                {recipes.map((recipe) => {
+                  const portionTotals = getPortionTotals(recipe);
 
-                    <div className="macro-row">
-                      <div>
-                        <span>Calories</span>
-                        <strong>{formatNumber(recipe.calories)}</strong>
-                      </div>
-                      <div>
-                        <span>kJ</span>
-                        <strong>{formatNumber(recipe.kj)}</strong>
-                      </div>
-                      <div>
-                        <span>Protein</span>
-                        <strong>{formatNumber(recipe.protein)}g</strong>
-                      </div>
-                    </div>
+                  return (
+                    <article className="meal-card" key={recipe.id}>
+                      <header>
+                        <div>
+                          <h3>{recipe.name}</h3>
+                          <p>{formatNumber(recipe.total_weight_g || 0)}g total weight</p>
+                        </div>
+                        <span className="count-pill">{recipe.category || "Meal"}</span>
+                      </header>
 
-                    <ul className="ingredient-list">
-                      {recipe.ingredients.map((ingredient) => (
-                        <li key={`${recipe.id}-${ingredient.food_id}`}>
-                          {ingredient.food_name}: {formatNumber(ingredient.quantity)} units
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
+                      <div className="macro-row">
+                        <div>
+                          <span>Calories</span>
+                          <strong>{formatNumber(recipe.calories)}</strong>
+                        </div>
+                        <div>
+                          <span>kJ</span>
+                          <strong>{formatNumber(recipe.kj)}</strong>
+                        </div>
+                        <div>
+                          <span>Protein</span>
+                          <strong>{formatNumber(recipe.protein)}g</strong>
+                        </div>
+                      </div>
+
+                      <div className="portion-panel">
+                        <label>
+                          <span>Portion (g)</span>
+                          <input
+                            value={portionTotals.weight}
+                            onChange={(event) =>
+                              setPortionWeights({
+                                ...portionWeights,
+                                [recipe.id]: Number(event.target.value)
+                              })
+                            }
+                            type="number"
+                            min="0"
+                            step="0.1"
+                          />
+                        </label>
+
+                        <div className="portion-results">
+                          <div>
+                            <span>Calories</span>
+                            <strong>{formatNumber(portionTotals.calories)}</strong>
+                          </div>
+                          <div>
+                            <span>kJ</span>
+                            <strong>{formatNumber(portionTotals.kj)}</strong>
+                          </div>
+                          <div>
+                            <span>Protein</span>
+                            <strong>{formatNumber(portionTotals.protein)}g</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <ul className="ingredient-list">
+                        {recipe.ingredients.map((ingredient, index) => (
+                          <li key={`${recipe.id}-${ingredient.food_id}-${index}`}>
+                            {ingredient.food_name}: {formatNumber(ingredient.weight_g)}g
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="card-actions">
+                        <button className="text-button" type="button" onClick={() => editRecipe(recipe)}>
+                          Edit
+                        </button>
+                        <button className="text-button danger" type="button" onClick={() => handleRecipeDelete(recipe)}>
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             </div>
 
             <form className="form-panel" onSubmit={handleRecipeSubmit}>
               <div>
                 <p className="eyebrow">Meal builder</p>
-                <h2>Add meal</h2>
+                <h2>{editingRecipeId ? "Edit meal" : "Add meal"}</h2>
               </div>
 
               <label>
@@ -387,19 +582,31 @@ export function App() {
                   </select>
                 </label>
 
+              </div>
+
+              <div className="form-grid weight-grid">
                 <label>
-                  <span>Target</span>
+                  <span>Total weight (g)</span>
                   <input
-                    value={newRecipe.target_plan}
-                    onChange={(event) => setNewRecipe({ ...newRecipe, target_plan: event.target.value })}
-                    placeholder="Optional"
+                    value={newRecipe.total_weight_g}
+                    onChange={(event) => {
+                      setIsTotalWeightManual(true);
+                      setNewRecipe({ ...newRecipe, total_weight_g: Number(event.target.value) });
+                    }}
+                    type="number"
+                    min="0"
+                    step="0.1"
                   />
                 </label>
+
+                <button className="secondary-button inline-button" type="button" onClick={regenerateTotalWeight}>
+                  Regenerate
+                </button>
               </div>
+              <p className="form-message">Ingredient weight total: {formatNumber(ingredientWeightTotal)}g</p>
 
               <div className="builder-list">
                 {newRecipe.ingredients.map((ingredient, index) => {
-                  const selectedFood = foods.find((food) => food.id === ingredient.food_id);
                   return (
                     <div className="builder-row" key={index}>
                       <label>
@@ -419,11 +626,11 @@ export function App() {
                       </label>
 
                       <label>
-                        <span>Amount {selectedFood ? `(${selectedFood.unit_label})` : ""}</span>
+                        <span>Weight (g)</span>
                         <input
-                          value={ingredient.quantity}
+                          value={ingredient.weight_g}
                           onChange={(event) =>
-                            updateRecipeIngredient(index, { quantity: Number(event.target.value) })
+                            updateRecipeIngredient(index, { weight_g: Number(event.target.value) })
                           }
                           type="number"
                           min="0"
@@ -450,8 +657,13 @@ export function App() {
               </button>
 
               <button type="submit" disabled={isSavingRecipe || foods.length === 0}>
-                {isSavingRecipe ? "Adding..." : "Add meal"}
+                {isSavingRecipe ? "Saving..." : editingRecipeId ? "Save meal" : "Add meal"}
               </button>
+              {editingRecipeId ? (
+                <button className="secondary-button" type="button" onClick={resetRecipeForm}>
+                  Cancel edit
+                </button>
+              ) : null}
               <p className="form-message" role="status">
                 {foods.length === 0 ? "Add at least one ingredient first." : recipeMessage}
               </p>

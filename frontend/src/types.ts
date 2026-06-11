@@ -11,7 +11,7 @@ export type Food = {
 export type Ingredient = {
   food_id: string;
   food_name: string;
-  quantity: number;
+  weight_g: number;
   calories: number;
   kj: number;
   protein: number;
@@ -22,6 +22,7 @@ export type Recipe = {
   name: string;
   category?: string | null;
   target_plan?: string | null;
+  total_weight_g?: number | null;
   calories: number;
   kj: number;
   protein: number;
@@ -44,9 +45,9 @@ export type NewFood = {
 export type NewRecipe = {
   name: string;
   category: string;
-  target_plan: string;
+  total_weight_g: number;
   ingredients: Array<{
     food_id: string;
-    quantity: number;
+    weight_g: number;
   }>;
 };

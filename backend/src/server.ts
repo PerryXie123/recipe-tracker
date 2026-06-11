@@ -25,7 +25,7 @@ type Food = {
 type Ingredient = {
   food_id: string;
   food_name: string;
-  quantity: number;
+  weight_g: number;
   calories: number;
   kj: number;
   protein: number;
@@ -36,6 +36,7 @@ type Recipe = {
   name: string;
   category?: string | null;
   target_plan?: string | null;
+  total_weight_g?: number | string | null;
   ingredients: Ingredient[];
 };
 
@@ -58,9 +59,10 @@ type NewRecipePayload = {
   name?: string;
   category?: string | null;
   target_plan?: string | null;
+  total_weight_g?: number | string | null;
   ingredients?: Array<{
     food_id?: string;
-    quantity?: number | string;
+    weight_g?: number | string;
   }>;
 };
 
@@ -69,6 +71,7 @@ type SupabaseRecipe = {
   name: string;
   category?: string | null;
   target_plan?: string | null;
+  total_weight_g?: number | string | null;
 };
 
 type SupabaseIngredient = {
@@ -79,7 +82,7 @@ type SupabaseIngredient = {
 };
 
 let demoFoods: Food[] = [
-  { id: "demo-egg", name: "Egg", calories_per_unit: 75, kj_per_unit: 313.8, protein_per_unit: 6, unit_label: "serving" },
+  { id: "demo-egg", name: "Egg", calories_per_unit: 155, kj_per_unit: 648.5, protein_per_unit: 12.6, unit_label: "100g" },
   { id: "demo-oats", name: "Rolled oats", calories_per_unit: 382.4, kj_per_unit: 1600, protein_per_unit: 13.4, unit_label: "100g" },
   { id: "demo-chicken", name: "Chicken breast", calories_per_unit: 165, kj_per_unit: 690.4, protein_per_unit: 31, unit_label: "100g" },
   { id: "demo-rice", name: "Rice", calories_per_unit: 170, kj_per_unit: 711.3, protein_per_unit: 3.8, unit_label: "100g" },
@@ -92,9 +95,10 @@ let demoRecipes: Recipe[] = [
     name: "Overnight oats",
     category: "Breakfast",
     target_plan: "1350 cal / 120 protein",
+    total_weight_g: 210,
     ingredients: [
-      { food_id: "demo-oats", food_name: "Rolled oats", quantity: 0.6, calories: 229.4, kj: 960, protein: 8 },
-      { food_id: "demo-yoghurt", food_name: "Greek yoghurt", quantity: 1.5, calories: 154.2, kj: 645.2, protein: 6.9 }
+      { food_id: "demo-oats", food_name: "Rolled oats", weight_g: 60, calories: 229.4, kj: 960, protein: 8 },
+      { food_id: "demo-yoghurt", food_name: "Greek yoghurt", weight_g: 150, calories: 154.2, kj: 645.2, protein: 6.9 }
     ]
   },
   {
@@ -102,9 +106,10 @@ let demoRecipes: Recipe[] = [
     name: "Chicken rice bowl",
     category: "Lunch",
     target_plan: "2100 cal / 180 protein",
+    total_weight_g: 400,
     ingredients: [
-      { food_id: "demo-chicken", food_name: "Chicken breast", quantity: 2, calories: 330, kj: 1380.7, protein: 62 },
-      { food_id: "demo-rice", food_name: "Rice", quantity: 2, calories: 340, kj: 1422.6, protein: 7.6 }
+      { food_id: "demo-chicken", food_name: "Chicken breast", weight_g: 200, calories: 330, kj: 1380.7, protein: 62 },
+      { food_id: "demo-rice", food_name: "Rice", weight_g: 200, calories: 340, kj: 1422.6, protein: 7.6 }
     ]
   }
 ];
@@ -146,11 +151,24 @@ function normalizeSupabaseUrl(value: string | undefined) {
 function sendJson(response: ServerResponse, status: number, payload: unknown) {
   response.writeHead(status, {
     "access-control-allow-origin": "http://127.0.0.1:5173",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
     "access-control-allow-headers": "content-type",
     "content-type": "application/json; charset=utf-8"
   });
   response.end(JSON.stringify(payload));
+}
+
+function getPathId(pathname: string, prefix: string) {
+  if (!pathname.startsWith(prefix)) {
+    return null;
+  }
+
+  const id = pathname.slice(prefix.length);
+  return id && !id.includes("/") ? decodeURIComponent(id) : null;
+}
+
+function filterEq(column: string, value: string) {
+  return `${column}=eq.${encodeURIComponent(value)}`;
 }
 
 function readBody<T>(request: IncomingMessage): Promise<T> {
@@ -228,10 +246,10 @@ async function getRecipes(): Promise<RecipeWithTotals[]> {
         return {
           food_id: food.id,
           food_name: food.name,
-          quantity: Number(ingredient.quantity),
-          calories: Number(food.calories_per_unit) * Number(ingredient.quantity),
-          kj: Number(food.kj_per_unit) * Number(ingredient.quantity),
-          protein: Number(food.protein_per_unit) * Number(ingredient.quantity)
+          weight_g: Number(ingredient.quantity),
+          calories: (Number(food.calories_per_unit) * Number(ingredient.quantity)) / 100,
+          kj: (Number(food.kj_per_unit) * Number(ingredient.quantity)) / 100,
+          protein: (Number(food.protein_per_unit) * Number(ingredient.quantity)) / 100
         };
       });
 
@@ -249,10 +267,10 @@ function getDemoRecipeWithIngredientTotals(recipe: Recipe): RecipeWithTotals {
     return {
       food_id: food.id,
       food_name: food.name,
-      quantity: ingredient.quantity,
-      calories: round1(food.calories_per_unit * ingredient.quantity),
-      kj: round1(food.kj_per_unit * ingredient.quantity),
-      protein: round1(food.protein_per_unit * ingredient.quantity)
+      weight_g: ingredient.weight_g,
+      calories: round1((food.calories_per_unit * ingredient.weight_g) / 100),
+      kj: round1((food.kj_per_unit * ingredient.weight_g) / 100),
+      protein: round1((food.protein_per_unit * ingredient.weight_g) / 100)
     };
   });
 
@@ -265,6 +283,7 @@ function withRecipeTotals(recipe: Recipe): RecipeWithTotals {
   const protein = recipe.ingredients.reduce((sum, ingredient) => sum + Number(ingredient.protein || 0), 0);
   return {
     ...recipe,
+    total_weight_g: round1(Number(recipe.total_weight_g ?? getRecipeIngredientWeight(recipe))),
     calories: Math.round(calories),
     kj: round1(kj),
     protein: Math.round(protein * 10) / 10
@@ -272,26 +291,7 @@ function withRecipeTotals(recipe: Recipe): RecipeWithTotals {
 }
 
 async function createFood(payload: NewFoodPayload): Promise<Food> {
-  const submittedCalories = Number(payload.calories_per_unit);
-  const submittedKj = Number(payload.kj_per_unit);
-  const protein = Number(payload.protein_per_unit);
-  const hasCalories = Number.isFinite(submittedCalories);
-  const hasKj = Number.isFinite(submittedKj);
-  const calories = hasCalories ? submittedCalories : submittedKj / 4.184;
-  const kj = hasKj ? submittedKj : submittedCalories * 4.184;
-
-  if (!payload.name || (!hasCalories && !hasKj) || !Number.isFinite(protein)) {
-    throw Object.assign(new Error("Name, calories or kJ, and protein are required"), { code: "BAD_REQUEST" });
-  }
-
-  const food = {
-    name: payload.name,
-    calories_per_unit: round1(calories),
-    kj_per_unit: round1(kj),
-    protein_per_unit: protein,
-    unit_label: payload.unit_label || "100g",
-    notes: payload.notes || null
-  };
+  const food = parseFoodPayload(payload);
 
   if (!supabaseUrl || !supabaseKey) {
     const created = { ...food, id: `demo-food-${Date.now()}` };
@@ -311,15 +311,108 @@ async function createFood(payload: NewFoodPayload): Promise<Food> {
   return created;
 }
 
+async function updateFood(id: string, payload: NewFoodPayload): Promise<Food> {
+  const food = parseFoodPayload(payload);
+
+  if (!supabaseUrl || !supabaseKey) {
+    const existing = demoFoods.find((item) => item.id === id);
+    if (!existing) {
+      throw Object.assign(new Error("Ingredient not found"), { code: "NOT_FOUND" });
+    }
+
+    const updated = { ...existing, ...food };
+    demoFoods = demoFoods.map((item) => (item.id === id ? updated : item));
+    return updated;
+  }
+
+  const [updated] = await supabase<Food[]>(`foods?${filterEq("id", id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(food)
+  });
+
+  if (!updated) {
+    throw Object.assign(new Error("Ingredient not found"), { code: "NOT_FOUND" });
+  }
+
+  return updated;
+}
+
+async function deleteFood(id: string) {
+  if (!supabaseUrl || !supabaseKey) {
+    const inUse = demoRecipes.some((recipe) => recipe.ingredients.some((ingredient) => ingredient.food_id === id));
+    if (inUse) {
+      throw Object.assign(new Error("Ingredient is used by a meal and cannot be deleted yet"), { code: "BAD_REQUEST" });
+    }
+
+    demoFoods = demoFoods.filter((item) => item.id !== id);
+    return { ok: true };
+  }
+
+  await supabase<Food[]>(`foods?${filterEq("id", id)}`, {
+    method: "DELETE"
+  });
+
+  return { ok: true };
+}
+
+function parseFoodPayload(payload: NewFoodPayload) {
+  const submittedCalories = Number(payload.calories_per_unit);
+  const submittedKj = Number(payload.kj_per_unit);
+  const protein = Number(payload.protein_per_unit);
+  const hasCalories = Number.isFinite(submittedCalories);
+  const hasKj = Number.isFinite(submittedKj);
+  const calories = hasCalories ? submittedCalories : submittedKj / 4.184;
+  const kj = hasKj ? submittedKj : submittedCalories * 4.184;
+
+  if (!payload.name || (!hasCalories && !hasKj) || !Number.isFinite(protein)) {
+    throw Object.assign(new Error("Name, calories or kJ, and protein are required"), { code: "BAD_REQUEST" });
+  }
+
+  return {
+    name: payload.name,
+    calories_per_unit: round1(calories),
+    kj_per_unit: round1(kj),
+    protein_per_unit: protein,
+    unit_label: "100g",
+    notes: payload.notes || null
+  };
+}
+
 async function createRecipe(payload: NewRecipePayload): Promise<RecipeWithTotals> {
+  return saveRecipe(payload);
+}
+
+async function updateRecipe(id: string, payload: NewRecipePayload): Promise<RecipeWithTotals> {
+  return saveRecipe(payload, id);
+}
+
+async function deleteRecipe(id: string) {
+  if (!supabaseUrl || !supabaseKey) {
+    demoRecipes = demoRecipes.filter((recipe) => recipe.id !== id);
+    return { ok: true };
+  }
+
+  await supabase<SupabaseRecipe[]>(`recipes?${filterEq("id", id)}`, {
+    method: "DELETE"
+  });
+
+  return { ok: true };
+}
+
+async function saveRecipe(payload: NewRecipePayload, id?: string): Promise<RecipeWithTotals> {
   const name = payload.name?.trim();
   const ingredients = (payload.ingredients || [])
     .map((ingredient, index) => ({
       food_id: ingredient.food_id,
-      quantity: Number(ingredient.quantity),
+      weight_g: Number(ingredient.weight_g),
       sort_order: index + 1
     }))
-    .filter((ingredient) => ingredient.food_id && Number.isFinite(ingredient.quantity) && ingredient.quantity > 0);
+    .filter((ingredient) => ingredient.food_id && Number.isFinite(ingredient.weight_g) && ingredient.weight_g > 0);
+  const ingredientWeight = ingredients.reduce((sum, ingredient) => sum + ingredient.weight_g, 0);
+  const submittedTotalWeight = Number(payload.total_weight_g);
+  const totalWeight = Number.isFinite(submittedTotalWeight) && submittedTotalWeight > 0
+    ? submittedTotalWeight
+    : ingredientWeight;
 
   if (!name || ingredients.length === 0) {
     throw Object.assign(new Error("Recipe name and at least one ingredient amount are required"), {
@@ -329,51 +422,70 @@ async function createRecipe(payload: NewRecipePayload): Promise<RecipeWithTotals
 
   if (!supabaseUrl || !supabaseKey) {
     const recipe: Recipe = {
-      id: `demo-recipe-${Date.now()}`,
+      id: id || `demo-recipe-${Date.now()}`,
       name,
       category: payload.category || "Meal",
       target_plan: payload.target_plan || null,
+      total_weight_g: round1(totalWeight),
       ingredients: ingredients.map((ingredient) => ({
         food_id: ingredient.food_id as string,
         food_name: "",
-        quantity: ingredient.quantity,
+        weight_g: ingredient.weight_g,
         calories: 0,
         kj: 0,
         protein: 0
       }))
     };
-    demoRecipes = [...demoRecipes, recipe];
+    demoRecipes = id
+      ? demoRecipes.map((existing) => (existing.id === id ? recipe : existing))
+      : [...demoRecipes, recipe];
     return getDemoRecipeWithIngredientTotals(recipe);
   }
 
-  const [createdRecipe] = await supabase<SupabaseRecipe[]>("recipes", {
-    method: "POST",
-    body: JSON.stringify({
-      name,
-      category: payload.category || null,
-      target_plan: payload.target_plan || null
-    })
-  });
+  const recipePayload = {
+    name,
+    category: payload.category || null,
+    target_plan: payload.target_plan || null,
+    total_weight_g: round1(totalWeight)
+  };
 
-  if (!createdRecipe) {
-    throw new Error("Supabase did not return the created recipe");
+  const [savedRecipe] = id
+    ? await supabase<SupabaseRecipe[]>(`recipes?${filterEq("id", id)}`, {
+        method: "PATCH",
+        body: JSON.stringify(recipePayload)
+      })
+    : await supabase<SupabaseRecipe[]>("recipes", {
+        method: "POST",
+        body: JSON.stringify(recipePayload)
+      });
+
+  if (!savedRecipe) {
+    throw Object.assign(new Error(id ? "Meal not found" : "Supabase did not return the created recipe"), {
+      code: id ? "NOT_FOUND" : "SERVER_ERROR"
+    });
+  }
+
+  if (id) {
+    await supabase(`recipe_ingredients?${filterEq("recipe_id", id)}`, {
+      method: "DELETE"
+    });
   }
 
   await supabase("recipe_ingredients", {
     method: "POST",
     body: JSON.stringify(
       ingredients.map((ingredient) => ({
-        recipe_id: createdRecipe.id,
+        recipe_id: savedRecipe.id,
         food_id: ingredient.food_id,
-        quantity: ingredient.quantity,
+        quantity: ingredient.weight_g,
         sort_order: ingredient.sort_order
       }))
     )
   });
 
-  const [recipeWithTotals] = (await getRecipes()).filter((recipe) => recipe.id === createdRecipe.id);
+  const [recipeWithTotals] = (await getRecipes()).filter((recipe) => recipe.id === savedRecipe.id);
   if (!recipeWithTotals) {
-    throw new Error("Created recipe could not be loaded");
+    throw new Error("Saved recipe could not be loaded");
   }
 
   return recipeWithTotals;
@@ -381,6 +493,10 @@ async function createRecipe(payload: NewRecipePayload): Promise<RecipeWithTotals
 
 function round1(value: number) {
   return Math.round(value * 10) / 10;
+}
+
+function getRecipeIngredientWeight(recipe: Recipe) {
+  return round1(recipe.ingredients.reduce((sum, ingredient) => sum + Number(ingredient.weight_g || 0), 0));
 }
 
 async function handleApi(request: IncomingMessage, response: ServerResponse, url: URL) {
@@ -400,6 +516,15 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       return sendJson(response, 201, await createFood(await readBody<NewFoodPayload>(request)));
     }
 
+    const foodId = getPathId(url.pathname, "/api/foods/");
+    if (foodId && request.method === "PUT") {
+      return sendJson(response, 200, await updateFood(foodId, await readBody<NewFoodPayload>(request)));
+    }
+
+    if (foodId && request.method === "DELETE") {
+      return sendJson(response, 200, await deleteFood(foodId));
+    }
+
     if (request.method === "GET" && url.pathname === "/api/recipes") {
       return sendJson(response, 200, await getRecipes());
     }
@@ -408,9 +533,19 @@ async function handleApi(request: IncomingMessage, response: ServerResponse, url
       return sendJson(response, 201, await createRecipe(await readBody<NewRecipePayload>(request)));
     }
 
+    const recipeId = getPathId(url.pathname, "/api/recipes/");
+    if (recipeId && request.method === "PUT") {
+      return sendJson(response, 200, await updateRecipe(recipeId, await readBody<NewRecipePayload>(request)));
+    }
+
+    if (recipeId && request.method === "DELETE") {
+      return sendJson(response, 200, await deleteRecipe(recipeId));
+    }
+
     return sendJson(response, 404, { error: "Not found" });
   } catch (error) {
-    const status = isNodeError(error) && error.code === "BAD_REQUEST" ? 400 : 500;
+    const status =
+      isNodeError(error) && error.code === "BAD_REQUEST" ? 400 : isNodeError(error) && error.code === "NOT_FOUND" ? 404 : 500;
     const message = error instanceof Error ? error.message : "Unexpected server error";
     return sendJson(response, status, { error: message });
   }
@@ -422,7 +557,7 @@ createServer(async (request, response) => {
   if (request.method === "OPTIONS") {
     response.writeHead(204, {
       "access-control-allow-origin": "http://127.0.0.1:5173",
-      "access-control-allow-methods": "GET,POST,OPTIONS",
+      "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
       "access-control-allow-headers": "content-type"
     });
     response.end();

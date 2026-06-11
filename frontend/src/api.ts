@@ -31,10 +31,38 @@ export function createFood(food: NewFood) {
   });
 }
 
+export function updateFood(id: string, food: NewFood) {
+  return request<Food>(`/api/foods/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(food)
+  });
+}
+
+export function deleteFood(id: string) {
+  return request<{ ok: boolean }>(`/api/foods/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+}
+
 export function createRecipe(recipe: NewRecipe) {
   return request<Recipe>("/api/recipes", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(recipe)
+  });
+}
+
+export function updateRecipe(id: string, recipe: NewRecipe) {
+  return request<Recipe>(`/api/recipes/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(recipe)
+  });
+}
+
+export function deleteRecipe(id: string) {
+  return request<{ ok: boolean }>(`/api/recipes/${encodeURIComponent(id)}`, {
+    method: "DELETE"
   });
 }
