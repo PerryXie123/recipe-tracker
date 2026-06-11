@@ -1,0 +1,19 @@
+{
+  "name": "@recipe-tracker/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite-node --watch src/server.ts",
+    "build": "tsc && vite build",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "vite": "^7.2.6",
+    "vite-node": "^6.0.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1"
+  }
+}
