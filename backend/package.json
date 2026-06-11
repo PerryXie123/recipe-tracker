@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite-node --watch src/server.ts",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --configLoader runner",
     "start": "node dist/server.js"
   },
   "dependencies": {

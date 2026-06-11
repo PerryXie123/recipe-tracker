@@ -7,12 +7,19 @@ type Tab = "ingredients" | "meals";
 const initialFood: NewFood = {
   name: "",
   calories_per_unit: 0,
+  kj_per_unit: 0,
   protein_per_unit: 0,
   unit_label: "100g"
 };
 
+const KJ_PER_CALORIE = 4.184;
+
 function formatNumber(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+}
+
+function round1(value: number) {
+  return Math.round(value * 10) / 10;
 }
 
 export function App() {
@@ -49,9 +56,10 @@ export function App() {
     return recipes.reduce(
       (totals, recipe) => ({
         calories: totals.calories + recipe.calories,
+        kj: totals.kj + recipe.kj,
         protein: totals.protein + recipe.protein
       }),
-      { calories: 0, protein: 0 }
+      { calories: 0, kj: 0, protein: 0 }
     );
   }, [recipes]);
 
@@ -129,6 +137,7 @@ export function App() {
                     <tr>
                       <th>Ingredient</th>
                       <th>Calories</th>
+                      <th>kJ</th>
                       <th>Protein</th>
                       <th>Unit</th>
                     </tr>
@@ -138,6 +147,7 @@ export function App() {
                       <tr key={food.id}>
                         <td>{food.name}</td>
                         <td>{formatNumber(food.calories_per_unit)}</td>
+                        <td>{formatNumber(food.kj_per_unit)}</td>
                         <td>{formatNumber(food.protein_per_unit)}g</td>
                         <td>{food.unit_label}</td>
                       </tr>
@@ -168,9 +178,14 @@ export function App() {
                   <span>Calories</span>
                   <input
                     value={newFood.calories_per_unit}
-                    onChange={(event) =>
-                      setNewFood({ ...newFood, calories_per_unit: Number(event.target.value) })
-                    }
+                    onChange={(event) => {
+                      const calories = Number(event.target.value);
+                      setNewFood({
+                        ...newFood,
+                        calories_per_unit: calories,
+                        kj_per_unit: round1(calories * KJ_PER_CALORIE)
+                      });
+                    }}
                     type="number"
                     min="0"
                     step="0.1"
@@ -178,6 +193,27 @@ export function App() {
                   />
                 </label>
 
+                <label>
+                  <span>kJ</span>
+                  <input
+                    value={newFood.kj_per_unit}
+                    onChange={(event) => {
+                      const kj = Number(event.target.value);
+                      setNewFood({
+                        ...newFood,
+                        kj_per_unit: kj,
+                        calories_per_unit: round1(kj / KJ_PER_CALORIE)
+                      });
+                    }}
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div className="form-grid">
                 <label>
                   <span>Protein</span>
                   <input
@@ -223,6 +259,7 @@ export function App() {
               <div className="summary-row">
                 <span>{recipes.length} meals</span>
                 <span>{formatNumber(mealTotals.calories)} cal</span>
+                <span>{formatNumber(mealTotals.kj)} kJ</span>
                 <span>{formatNumber(mealTotals.protein)}g protein</span>
               </div>
             </div>
@@ -242,6 +279,10 @@ export function App() {
                     <div>
                       <span>Calories</span>
                       <strong>{formatNumber(recipe.calories)}</strong>
+                    </div>
+                    <div>
+                      <span>kJ</span>
+                      <strong>{formatNumber(recipe.kj)}</strong>
                     </div>
                     <div>
                       <span>Protein</span>

@@ -4,11 +4,34 @@ create table if not exists public.foods (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   calories_per_unit numeric not null check (calories_per_unit >= 0),
+  kj_per_unit numeric not null check (kj_per_unit >= 0),
   protein_per_unit numeric not null check (protein_per_unit >= 0),
   unit_label text not null default '100g',
   notes text,
   created_at timestamptz not null default now()
 );
+
+alter table public.foods
+  add column if not exists kj_per_unit numeric;
+
+update public.foods
+set kj_per_unit = round(calories_per_unit * 4.184, 1)
+where kj_per_unit is null;
+
+alter table public.foods
+  alter column kj_per_unit set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'foods_kj_per_unit_nonnegative'
+  ) then
+    alter table public.foods
+      add constraint foods_kj_per_unit_nonnegative check (kj_per_unit >= 0);
+  end if;
+end $$;
 
 create table if not exists public.recipes (
   id uuid primary key default gen_random_uuid(),
@@ -31,6 +54,10 @@ alter table public.foods enable row level security;
 alter table public.recipes enable row level security;
 alter table public.recipe_ingredients enable row level security;
 
+drop policy if exists "Service role manages foods" on public.foods;
+drop policy if exists "Service role manages recipes" on public.recipes;
+drop policy if exists "Service role manages recipe ingredients" on public.recipe_ingredients;
+
 create policy "Service role manages foods" on public.foods
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
@@ -40,13 +67,13 @@ create policy "Service role manages recipes" on public.recipes
 create policy "Service role manages recipe ingredients" on public.recipe_ingredients
   for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
 
-insert into public.foods (name, calories_per_unit, protein_per_unit, unit_label, notes)
+insert into public.foods (name, calories_per_unit, kj_per_unit, protein_per_unit, unit_label, notes)
 values
-  ('Egg', 75, 6, 'serving', null),
-  ('Rolled oats', 382.4, 13.4, '100g', null),
-  ('Greek yoghurt', 102.8, 4.6, '100g', null),
-  ('Chicken breast', 165, 31, '100g', 'cooked'),
-  ('Rice', 170, 3.8, '100g', 'cooked')
+  ('Egg', 75, 313.8, 6, 'serving', null),
+  ('Rolled oats', 382.4, 1600, 13.4, '100g', null),
+  ('Greek yoghurt', 102.8, 430.1, 4.6, '100g', null),
+  ('Chicken breast', 165, 690.4, 31, '100g', 'cooked'),
+  ('Rice', 170, 711.3, 3.8, '100g', 'cooked')
 on conflict (name) do nothing;
 
 insert into public.recipes (name, category, target_plan)
