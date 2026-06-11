@@ -23,6 +23,7 @@ export type Recipe = {
   category?: string | null;
   target_plan?: string | null;
   total_weight_g?: number | null;
+  created_at?: string | null;
   calories: number;
   kj: number;
   protein: number;
