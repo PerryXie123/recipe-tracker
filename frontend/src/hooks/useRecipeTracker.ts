@@ -7,6 +7,7 @@ import {
   getFoods,
   getHealth,
   getRecipes,
+  setApiAccessToken,
   updateFood,
   updateRecipe
 } from "../api";
@@ -40,7 +41,7 @@ function getInitialFavoriteRecipeIds() {
   }
 }
 
-export function useRecipeTracker(onNavigate?: (route: Route) => void) {
+export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToken?: string) {
   const [health, setHealth] = useState<Health | null>(null);
   const [foods, setFoods] = useState<Food[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -64,19 +65,32 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void) {
   }
 
   useEffect(() => {
+    setApiAccessToken(accessToken);
+  }, [accessToken]);
+
+  useEffect(() => {
     async function load() {
       try {
         const nextHealth = await getHealth();
         setHealth(nextHealth);
+        if (nextHealth.supabaseConfigured && !accessToken) {
+          setFoods([]);
+          setRecipes([]);
+          setMessage("Sign in to load your ingredients.");
+          setRecipeMessage("Sign in to load your meals.");
+          return;
+        }
+
         await refresh();
         setMessage("");
+        setRecipeMessage("");
       } catch (error) {
         setMessage(error instanceof Error ? error.message : "Could not load app data.");
       }
     }
 
     void load();
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteRecipeIds));

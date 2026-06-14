@@ -3,7 +3,7 @@ export type SupabaseClient = <T>(path: string, options?: RequestInit) => Promise
 export function createSupabaseClient(supabaseUrl: string | undefined, supabaseKey: string | undefined) {
   const configured = Boolean(supabaseUrl && supabaseKey);
 
-  const request: SupabaseClient = async <T>(path: string, options: RequestInit = {}) => {
+  const request = (accessToken?: string): SupabaseClient => async <T>(path: string, options: RequestInit = {}) => {
     if (!supabaseUrl || !supabaseKey) {
       throw Object.assign(new Error("Supabase is not configured"), { code: "NO_SUPABASE" });
     }
@@ -12,7 +12,7 @@ export function createSupabaseClient(supabaseUrl: string | undefined, supabaseKe
       ...options,
       headers: {
         apikey: supabaseKey,
-        authorization: `Bearer ${supabaseKey}`,
+        authorization: `Bearer ${accessToken || supabaseKey}`,
         "content-type": "application/json",
         prefer: "return=representation",
         ...(options.headers || {})
@@ -36,4 +36,40 @@ export function createSupabaseClient(supabaseUrl: string | undefined, supabaseKe
 
 export function filterEq(column: string, value: string) {
   return `${column}=eq.${encodeURIComponent(value)}`;
+}
+
+export type AuthContext = {
+  accessToken?: string;
+  userId?: string;
+};
+
+export function getAuthContext(authorizationHeader: string | string[] | undefined): AuthContext {
+  const header = Array.isArray(authorizationHeader) ? authorizationHeader[0] : authorizationHeader;
+  const match = header?.match(/^Bearer\s+(.+)$/i);
+  const accessToken = match?.[1];
+
+  if (!accessToken) {
+    return {};
+  }
+
+  return {
+    accessToken,
+    userId: getJwtSubject(accessToken)
+  };
+}
+
+function getJwtSubject(token: string) {
+  const [, payload] = token.split(".");
+  if (!payload) {
+    return undefined;
+  }
+
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const parsed = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as { sub?: string };
+    return parsed.sub;
+  } catch {
+    return undefined;
+  }
 }

@@ -1,6 +1,6 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Group, Paper, Text, TextInput, Title } from "@mantine/core";
+import { Button, Group, Paper, Text, TextInput, Title } from "@mantine/core";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
@@ -133,7 +133,6 @@ export function MealsPage({
           <Text className="eyebrow">Meals</Text>
           <Title order={1}>Meals</Title>
         </div>
-        <Badge variant="light">{filteredRecipes.length} matches</Badge>
       </header>
 
       <section className="content-layout meals-layout">

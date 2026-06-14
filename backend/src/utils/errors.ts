@@ -9,3 +9,7 @@ export function badRequest(message: string) {
 export function notFound(message: string) {
   return Object.assign(new Error(message), { code: "NOT_FOUND" });
 }
+
+export function unauthorized(message: string) {
+  return Object.assign(new Error(message), { code: "UNAUTHORIZED" });
+}

@@ -4,7 +4,7 @@ export function sendJson(response: ServerResponse, status: number, payload: unkn
   response.writeHead(status, {
     "access-control-allow-origin": "http://127.0.0.1:5173",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "content-type",
+    "access-control-allow-headers": "content-type,authorization",
     "content-type": "application/json; charset=utf-8"
   });
   response.end(JSON.stringify(payload));
@@ -14,7 +14,7 @@ export function sendOptions(response: ServerResponse) {
   response.writeHead(204, {
     "access-control-allow-origin": "http://127.0.0.1:5173",
     "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-    "access-control-allow-headers": "content-type"
+    "access-control-allow-headers": "content-type,authorization"
   });
   response.end();
 }

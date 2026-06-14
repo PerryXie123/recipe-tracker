@@ -1,22 +1,23 @@
 import { demoFoods, demoRecipes, setDemoRecipes } from "../data/demoStore";
-import { filterEq, type SupabaseClient } from "../lib/supabase";
+import { filterEq, type AuthContext, type SupabaseClient } from "../lib/supabase";
 import type { NewRecipePayload, Recipe, RecipeWithTotals, SupabaseIngredient, SupabaseRecipe } from "../types";
-import { badRequest, notFound } from "../utils/errors";
+import { badRequest, notFound, unauthorized } from "../utils/errors";
 import { getRecipeIngredientWeight, round1 } from "../utils/numbers";
 
 type RecipeServiceOptions = {
   supabaseConfigured: boolean;
-  supabase: SupabaseClient;
+  createSupabase: (accessToken?: string) => SupabaseClient;
 };
 
-export function createRecipeService({ supabaseConfigured, supabase }: RecipeServiceOptions) {
-  async function getRecipes(): Promise<RecipeWithTotals[]> {
+export function createRecipeService({ supabaseConfigured, createSupabase }: RecipeServiceOptions) {
+  async function getRecipes(auth: AuthContext): Promise<RecipeWithTotals[]> {
     if (!supabaseConfigured) {
       return [...demoRecipes]
         .sort((first, second) => Number(new Date(second.created_at || 0)) - Number(new Date(first.created_at || 0)))
         .map(getDemoRecipeWithIngredientTotals);
     }
 
+    const supabase = getSupabaseForUser(auth);
     const recipes = await supabase<SupabaseRecipe[]>("recipes?select=*&order=created_at.desc");
     const ingredients = await supabase<SupabaseIngredient[]>(
       "recipe_ingredients?select=id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label)"
@@ -41,20 +42,21 @@ export function createRecipeService({ supabaseConfigured, supabase }: RecipeServ
     });
   }
 
-  async function createRecipe(payload: NewRecipePayload): Promise<RecipeWithTotals> {
-    return saveRecipe(payload);
+  async function createRecipe(payload: NewRecipePayload, auth: AuthContext): Promise<RecipeWithTotals> {
+    return saveRecipe(payload, auth);
   }
 
-  async function updateRecipe(id: string, payload: NewRecipePayload): Promise<RecipeWithTotals> {
-    return saveRecipe(payload, id);
+  async function updateRecipe(id: string, payload: NewRecipePayload, auth: AuthContext): Promise<RecipeWithTotals> {
+    return saveRecipe(payload, auth, id);
   }
 
-  async function deleteRecipe(id: string) {
+  async function deleteRecipe(id: string, auth: AuthContext) {
     if (!supabaseConfigured) {
       setDemoRecipes(demoRecipes.filter((recipe) => recipe.id !== id));
       return { ok: true };
     }
 
+    const supabase = getSupabaseForUser(auth);
     await supabase<SupabaseRecipe[]>(`recipes?${filterEq("id", id)}`, {
       method: "DELETE"
     });
@@ -62,7 +64,7 @@ export function createRecipeService({ supabaseConfigured, supabase }: RecipeServ
     return { ok: true };
   }
 
-  async function saveRecipe(payload: NewRecipePayload, id?: string): Promise<RecipeWithTotals> {
+  async function saveRecipe(payload: NewRecipePayload, auth: AuthContext, id?: string): Promise<RecipeWithTotals> {
     const name = payload.name?.trim();
     const ingredients = (payload.ingredients || [])
       .map((ingredient, index) => ({
@@ -105,13 +107,20 @@ export function createRecipeService({ supabaseConfigured, supabase }: RecipeServ
       name,
       category: payload.category || null,
       target_plan: payload.target_plan || null,
-      total_weight_g: round1(totalWeight)
+      total_weight_g: round1(totalWeight),
+      user_id: auth.userId
     };
 
+    const supabase = getSupabaseForUser(auth);
     const [savedRecipe] = id
       ? await supabase<SupabaseRecipe[]>(`recipes?${filterEq("id", id)}`, {
           method: "PATCH",
-          body: JSON.stringify(recipePayload)
+          body: JSON.stringify({
+            name: recipePayload.name,
+            category: recipePayload.category,
+            target_plan: recipePayload.target_plan,
+            total_weight_g: recipePayload.total_weight_g
+          })
         })
       : await supabase<SupabaseRecipe[]>("recipes", {
           method: "POST",
@@ -140,7 +149,7 @@ export function createRecipeService({ supabaseConfigured, supabase }: RecipeServ
       )
     });
 
-    const [recipeWithTotals] = (await getRecipes()).filter((recipe) => recipe.id === savedRecipe.id);
+    const [recipeWithTotals] = (await getRecipes(auth)).filter((recipe) => recipe.id === savedRecipe.id);
     if (!recipeWithTotals) {
       throw new Error("Saved recipe could not be loaded");
     }
@@ -149,6 +158,14 @@ export function createRecipeService({ supabaseConfigured, supabase }: RecipeServ
   }
 
   return { getRecipes, createRecipe, updateRecipe, deleteRecipe };
+
+  function getSupabaseForUser(auth: AuthContext) {
+    if (!auth.accessToken || !auth.userId) {
+      throw unauthorized("Sign in to manage meals.");
+    }
+
+    return createSupabase(auth.accessToken);
+  }
 }
 
 function getDemoRecipeWithIngredientTotals(recipe: Recipe): RecipeWithTotals {

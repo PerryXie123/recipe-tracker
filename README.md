@@ -15,8 +15,10 @@ The sample app has:
 1. Create a Supabase project.
 2. Run `supabase/schema.sql` in the Supabase SQL editor.
 3. Copy `backend/.env.example` to `backend/.env`.
-4. Fill in your Supabase project URL and service role key.
-5. Start the app:
+4. Copy `frontend/.env.example` to `frontend/.env`.
+5. Fill in your Supabase project URL and publishable/anon key in both files.
+6. Enable Google auth in Supabase and add your local Vite URL to the auth redirect URLs.
+7. Start the app:
 
 ```bash
 npm run dev
@@ -35,11 +37,18 @@ The frontend proxies `/api/*` requests to the backend.
 
 ```bash
 SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_ANON_KEY=your-publishable-or-anon-key
 PORT=3001
 ```
 
-Use the service role key only on the backend. Do not expose it in browser code.
+Frontend:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-or-anon-key
+```
+
+Use the publishable/anon key for this app. Do not expose the service role key in browser code.
 
 ## Scripts
 

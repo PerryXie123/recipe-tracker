@@ -1,4 +1,4 @@
-export type Route = "home" | "ingredients" | "meals" | "favorites";
+export type Route = "home" | "ingredients" | "meals" | "favorites" | "calendar" | "tdee";
 
 export function getRouteFromPath(pathname: string): Route {
   if (pathname.startsWith("/ingredients")) {
@@ -11,6 +11,14 @@ export function getRouteFromPath(pathname: string): Route {
 
   if (pathname.startsWith("/favorites")) {
     return "favorites";
+  }
+
+  if (pathname.startsWith("/calendar")) {
+    return "calendar";
+  }
+
+  if (pathname.startsWith("/tdee")) {
+    return "tdee";
   }
 
   return "home";

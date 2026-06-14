@@ -14,13 +14,17 @@ await loadEnv(join(rootDir, "..", ".env"));
 
 const port = Number(process.env.PORT || 3001);
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseKey =
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  process.env.SUPABASE_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
 
 const handleApi = createApiHandler({
   supabaseConfigured: supabase.configured,
-  foods: createFoodService({ supabaseConfigured: supabase.configured, supabase: supabase.request }),
-  recipes: createRecipeService({ supabaseConfigured: supabase.configured, supabase: supabase.request })
+  foods: createFoodService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request }),
+  recipes: createRecipeService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request })
 });
 
 createServer(async (request, response) => {

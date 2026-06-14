@@ -1,7 +1,18 @@
 import type { Food, Health, NewFood, NewRecipe, Recipe } from "./types";
 
+let apiAccessToken: string | undefined;
+
+export function setApiAccessToken(accessToken: string | undefined) {
+  apiAccessToken = accessToken;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(path, options);
+  const headers = new Headers(options?.headers);
+  if (apiAccessToken) {
+    headers.set("authorization", `Bearer ${apiAccessToken}`);
+  }
+
+  const response = await fetch(path, { ...options, headers });
   const payload = await response.json();
 
   if (!response.ok) {
