@@ -30,11 +30,29 @@ export function FoodForm({
   onDelete
 }: FoodFormProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [unitDraft, setUnitDraft] = useState({ label: "serving", weight: 0 });
   const isPerUnit = food.unit_label !== "100g";
+  const visibleUnitLabel = isPerUnit ? food.unit_label : unitDraft.label;
+  const visibleUnitWeight = isPerUnit ? food.unit_weight_g : unitDraft.weight;
 
   useEffect(() => {
     setIsConfirmingDelete(false);
   }, [isEditing, food.name]);
+
+  useEffect(() => {
+    if (isPerUnit) {
+      setUnitDraft({
+        label: food.unit_label || "serving",
+        weight: Number(food.unit_weight_g || 0)
+      });
+    }
+  }, [food.unit_label, food.unit_weight_g, isPerUnit]);
+
+  useEffect(() => {
+    if (!isEditing && !food.name && !isPerUnit) {
+      setUnitDraft({ label: "serving", weight: 0 });
+    }
+  }, [food.name, isEditing, isPerUnit]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,9 +67,23 @@ export function FoodForm({
   function setUnitMode(mode: string) {
     onChange({
       ...food,
-      unit_label: mode === "unit" ? "serving" : "100g",
-      unit_weight_g: mode === "unit" ? food.unit_weight_g || 0 : 100
+      unit_label: mode === "unit" ? unitDraft.label || "serving" : "100g",
+      unit_weight_g: mode === "unit" ? unitDraft.weight : 100
     });
+  }
+
+  function updateUnitLabel(unit_label: string) {
+    setUnitDraft({ ...unitDraft, label: unit_label });
+    if (isPerUnit) {
+      onChange({ ...food, unit_label });
+    }
+  }
+
+  function updateUnitWeight(unit_weight_g: number) {
+    setUnitDraft({ ...unitDraft, weight: unit_weight_g });
+    if (isPerUnit) {
+      onChange({ ...food, unit_weight_g });
+    }
   }
 
   return (
@@ -110,25 +142,23 @@ export function FoodForm({
         />
       </div>
 
-      <div className="unit-fields-slot">
-        {isPerUnit ? (
-          <div className="form-grid unit-fields">
-            <TextInput
-              label="Unit type"
-              value={food.unit_label}
-              onChange={(unit_label) => onChange({ ...food, unit_label })}
-              placeholder="cup, bar, slice"
-              required
-            />
-            <NumericInput
-              label="Unit weight (g)"
-              value={food.unit_weight_g}
-              onChange={(unit_weight_g) => onChange({ ...food, unit_weight_g })}
-              min={0}
-              step={0.1}
-            />
-          </div>
-        ) : null}
+      <div className={isPerUnit ? "form-grid unit-fields" : "form-grid unit-fields is-disabled"}>
+        <TextInput
+          label="Unit type"
+          value={visibleUnitLabel}
+          onChange={updateUnitLabel}
+          placeholder="cup, bar, slice"
+          disabled={!isPerUnit}
+          required
+        />
+        <NumericInput
+          label="Unit weight (g)"
+          value={visibleUnitWeight}
+          onChange={updateUnitWeight}
+          min={0}
+          step={0.1}
+          disabled={!isPerUnit}
+        />
       </div>
 
       <div className="button-stack">

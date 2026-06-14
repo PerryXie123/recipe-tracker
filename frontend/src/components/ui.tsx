@@ -82,15 +82,22 @@ type TextInputProps = {
   label: string;
   value: string;
   className?: string;
+  disabled?: boolean;
   placeholder?: string;
   required?: boolean;
   onChange: (value: string) => void;
   onFocus?: () => void;
 };
 
-export function TextInput({ label, value, className = "", placeholder, required, onChange, onFocus }: TextInputProps) {
+export function TextInput({ label, value, className = "", disabled = false, placeholder, required, onChange, onFocus }: TextInputProps) {
   return (
-    <TextField className={`field ${className}`.trim()} value={value} isRequired={required} onChange={onChange}>
+    <TextField
+      className={`field ${className}`.trim()}
+      value={value}
+      isDisabled={disabled}
+      isRequired={required}
+      onChange={onChange}
+    >
       <Label>{label}</Label>
       <Input placeholder={placeholder} onFocus={onFocus} />
     </TextField>
@@ -101,17 +108,19 @@ type NumericInputProps = {
   label: string;
   value: number;
   className?: string;
+  disabled?: boolean;
   min?: number;
   step?: number;
   required?: boolean;
   onChange: (value: number) => void;
 };
 
-export function NumericInput({ label, value, className = "", min, step, required, onChange }: NumericInputProps) {
+export function NumericInput({ label, value, className = "", disabled = false, min, step, required, onChange }: NumericInputProps) {
   return (
     <NumberField
       className={`field ${className}`.trim()}
       value={Number.isFinite(value) ? value : 0}
+      isDisabled={disabled}
       minValue={min}
       step={step}
       isRequired={required}
