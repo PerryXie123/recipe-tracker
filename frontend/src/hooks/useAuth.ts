@@ -11,13 +11,29 @@ export function useAuth() {
       setIsAuthLoading(false);
       return;
     }
+    const authClient = supabase;
 
-    void supabase.auth.getSession().then(({ data }) => {
+    async function initialiseSession() {
+      const hashSession = getSessionFromHash();
+      if (hashSession) {
+        const { data, error } = await authClient.auth.setSession(hashSession);
+        if (error) {
+          console.error("Could not restore Supabase session from redirect URL", error);
+        }
+        setSession(data.session);
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        setIsAuthLoading(false);
+        return;
+      }
+
+      const { data } = await authClient.auth.getSession();
       setSession(data.session);
       setIsAuthLoading(false);
-    });
+    }
 
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    void initialiseSession();
+
+    const { data } = authClient.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setIsAuthLoading(false);
     });
@@ -59,5 +75,25 @@ export function useAuth() {
       null,
     signInWithGoogle,
     signOut
+  };
+}
+
+function getSessionFromHash() {
+  const hash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  if (!hash) {
+    return null;
+  }
+
+  const params = new URLSearchParams(hash);
+  const accessToken = params.get("access_token");
+  const refreshToken = params.get("refresh_token");
+
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken
   };
 }
