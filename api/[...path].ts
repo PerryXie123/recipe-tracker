@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { sendJson, sendOptions } from "../backend/src/http";
-import { normalizeSupabaseUrl, sanitizeEnvValue } from "../backend/src/config/env";
-import { createSupabaseClient } from "../backend/src/lib/supabase";
-import { createApiHandler } from "../backend/src/routes/api";
-import { createFoodService } from "../backend/src/services/foods";
-import { createRecipeService } from "../backend/src/services/recipes";
+import { sendJson, sendOptions } from "../backend/src/http.js";
+import { normalizeSupabaseUrl, sanitizeEnvValue } from "../backend/src/config/env.js";
+import { createSupabaseClient } from "../backend/src/lib/supabase.js";
+import { createApiHandler } from "../backend/src/routes/api.js";
+import { createFoodService } from "../backend/src/services/foods.js";
+import { createRecipeService } from "../backend/src/services/recipes.js";
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const supabaseKey =

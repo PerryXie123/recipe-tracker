@@ -1,4 +1,4 @@
-import type { Food, Recipe } from "../types";
+import type { Food, Recipe } from "../types.js";
 
 export let demoFoods: Food[] = [
   { id: "demo-egg", name: "Egg", calories_per_unit: 155, kj_per_unit: 648.5, protein_per_unit: 12.6, unit_label: "100g" },

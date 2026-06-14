@@ -13,10 +13,24 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
 
   const response = await fetch(path, { ...options, headers });
-  const payload = await response.json();
+  const responseText = await response.text();
+  let payload: unknown = null;
+
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText);
+    } catch {
+      throw new Error(response.ok ? "Unexpected API response" : responseText);
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(payload.error || "Request failed");
+    const message =
+      payload && typeof payload === "object" && "error" in payload
+        ? String((payload as { error?: unknown }).error)
+        : responseText || `Request failed (${response.status})`;
+
+    throw new Error(message);
   }
 
   return payload as T;

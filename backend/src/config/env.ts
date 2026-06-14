@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { isNodeError } from "../utils/errors";
+import { isNodeError } from "../utils/errors.js";
 
 export async function loadEnv(filePath: string) {
   try {

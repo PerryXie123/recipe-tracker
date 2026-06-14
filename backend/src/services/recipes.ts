@@ -1,8 +1,8 @@
-import { demoFoods, demoRecipes, setDemoRecipes } from "../data/demoStore";
-import { filterEq, type AuthContext, type SupabaseClient } from "../lib/supabase";
-import type { NewRecipePayload, Recipe, RecipeWithTotals, SupabaseIngredient, SupabaseRecipe } from "../types";
-import { badRequest, notFound, unauthorized } from "../utils/errors";
-import { getRecipeIngredientWeight, round1 } from "../utils/numbers";
+import { demoFoods, demoRecipes, setDemoRecipes } from "../data/demoStore.js";
+import { filterEq, type AuthContext, type SupabaseClient } from "../lib/supabase.js";
+import type { NewRecipePayload, Recipe, RecipeWithTotals, SupabaseIngredient, SupabaseRecipe } from "../types.js";
+import { badRequest, notFound, unauthorized } from "../utils/errors.js";
+import { getRecipeIngredientWeight, round1 } from "../utils/numbers.js";
 
 type RecipeServiceOptions = {
   supabaseConfigured: boolean;

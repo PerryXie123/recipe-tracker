@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { getPathId, readBody, sendJson } from "../http";
-import { getAuthContext, type AuthContext } from "../lib/supabase";
-import type { NewFoodPayload, NewRecipePayload } from "../types";
-import { isNodeError } from "../utils/errors";
+import { getPathId, readBody, sendJson } from "../http.js";
+import { getAuthContext, type AuthContext } from "../lib/supabase.js";
+import type { NewFoodPayload, NewRecipePayload } from "../types.js";
+import { isNodeError } from "../utils/errors.js";
 
 type ApiServices = {
   supabaseConfigured: boolean;

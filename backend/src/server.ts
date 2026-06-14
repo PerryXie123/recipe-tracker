@@ -1,12 +1,12 @@
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadEnv, normalizeSupabaseUrl, sanitizeEnvValue } from "./config/env";
-import { sendJson, sendOptions } from "./http";
-import { createSupabaseClient } from "./lib/supabase";
-import { createApiHandler } from "./routes/api";
-import { createFoodService } from "./services/foods";
-import { createRecipeService } from "./services/recipes";
+import { loadEnv, normalizeSupabaseUrl, sanitizeEnvValue } from "./config/env.js";
+import { sendJson, sendOptions } from "./http.js";
+import { createSupabaseClient } from "./lib/supabase.js";
+import { createApiHandler } from "./routes/api.js";
+import { createFoodService } from "./services/foods.js";
+import { createRecipeService } from "./services/recipes.js";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 

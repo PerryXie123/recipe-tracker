@@ -1,4 +1,4 @@
-import type { Recipe } from "../types";
+import type { Recipe } from "../types.js";
 
 export function round1(value: number) {
   return Math.round(value * 10) / 10;
