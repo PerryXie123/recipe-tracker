@@ -47,7 +47,9 @@ export function useAuth() {
 
     const { data } = authClient.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setAuthState(getAuthStateFromSession(nextSession));
+      setAuthState((currentAuthState) =>
+        nextSession ? getAuthStateFromSession(nextSession) : currentAuthState.accessToken ? currentAuthState : { email: null, name: null }
+      );
       setIsAuthLoading(false);
     });
 

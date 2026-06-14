@@ -22,7 +22,11 @@ export const supabaseAuthConfigMessage = !supabaseUrl
 export const isSupabaseAuthConfigured = Boolean(supabaseUrl && hasBrowserSafeKey);
 
 export const supabase = isSupabaseAuthConfigured
-  ? createClient(supabaseUrl as string, supabasePublishableKey as string)
+  ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
+      auth: {
+        detectSessionInUrl: false
+      }
+    })
   : null;
 
 function getEnvValue(value: string | undefined) {
