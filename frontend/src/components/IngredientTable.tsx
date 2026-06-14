@@ -1,4 +1,4 @@
-import { formatNumber } from "../lib/format";
+import { formatNumber, formatUnitBasis } from "../lib/format";
 import type { Food } from "../types";
 import { Checkbox } from "./ui";
 
@@ -43,7 +43,7 @@ export function IngredientTable({ foods, selectedFoodId, checkedFoodIds, onSelec
               <td>{formatNumber(food.calories_per_unit)}</td>
               <td>{formatNumber(food.kj_per_unit)}</td>
               <td>{formatNumber(food.protein_per_unit)}g</td>
-              <td>per 100g</td>
+              <td>{formatUnitBasis(food.unit_label, food.unit_weight_g)}</td>
             </tr>
           ))}
         </tbody>

@@ -102,13 +102,22 @@ function parseFoodPayload(payload: NewFoodPayload) {
   const submittedCalories = Number(payload.calories_per_unit);
   const submittedKj = Number(payload.kj_per_unit);
   const protein = Number(payload.protein_per_unit);
+  const rawUnitLabel = payload.unit_label?.trim() || "100g";
+  const unitLabel = rawUnitLabel === "100g" ? "100g" : rawUnitLabel;
+  const submittedUnitWeight = Number(payload.unit_weight_g);
+  const unitWeightG =
+    unitLabel === "100g"
+      ? 100
+      : Number.isFinite(submittedUnitWeight) && submittedUnitWeight >= 0
+        ? submittedUnitWeight
+        : 0;
   const hasCalories = Number.isFinite(submittedCalories);
   const hasKj = Number.isFinite(submittedKj);
   const calories = hasCalories ? submittedCalories : submittedKj / 4.184;
   const kj = hasKj ? submittedKj : submittedCalories * 4.184;
 
-  if (!payload.name || (!hasCalories && !hasKj) || !Number.isFinite(protein)) {
-    throw badRequest("Name, calories or kJ, and protein are required");
+  if (!payload.name || !unitLabel || (!hasCalories && !hasKj) || !Number.isFinite(protein)) {
+    throw badRequest("Name, unit, calories or kJ, and protein are required");
   }
 
   return {
@@ -116,7 +125,8 @@ function parseFoodPayload(payload: NewFoodPayload) {
     calories_per_unit: round1(calories),
     kj_per_unit: round1(kj),
     protein_per_unit: protein,
-    unit_label: "100g",
+    unit_label: unitLabel,
+    unit_weight_g: round1(unitWeightG),
     notes: payload.notes || null
   };
 }

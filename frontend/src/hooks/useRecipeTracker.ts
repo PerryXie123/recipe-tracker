@@ -20,7 +20,8 @@ const initialFood: NewFood = {
   calories_per_unit: 0,
   kj_per_unit: 0,
   protein_per_unit: 0,
-  unit_label: "100g"
+  unit_label: "100g",
+  unit_weight_g: 100
 };
 
 const initialRecipe: NewRecipe = {
@@ -152,7 +153,8 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
       calories_per_unit: Number(food.calories_per_unit),
       kj_per_unit: Number(food.kj_per_unit),
       protein_per_unit: Number(food.protein_per_unit),
-      unit_label: "100g"
+      unit_label: food.unit_label || "100g",
+      unit_weight_g: Number(food.unit_weight_g ?? (food.unit_label === "100g" ? 100 : 0))
     });
     setMessage("");
     onNavigate?.("ingredients");

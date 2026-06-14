@@ -43,7 +43,7 @@ const navItems: Array<{ route: Route; label: string; icon: typeof IconHome }> = 
 
 const routeTitles: Record<Route, { title: string; description: string }> = {
   home: { title: "Dashboard", description: "Plan, build, and track your meals with ease." },
-  ingredients: { title: "Ingredients", description: "Manage foods and per-100g nutrition values." },
+  ingredients: { title: "Ingredients", description: "Manage foods and nutrition values." },
   meals: { title: "Meals", description: "Build recipes from ingredients and calculate portions." },
   favorites: { title: "Favourites", description: "A focused view of meals you reach for often." },
   calendar: { title: "Calendar", description: "Plan dated weeks from Monday through Sunday." },

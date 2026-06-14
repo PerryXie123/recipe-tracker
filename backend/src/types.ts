@@ -5,6 +5,7 @@ export type Food = {
   kj_per_unit: number;
   protein_per_unit: number;
   unit_label: string;
+  unit_weight_g: number;
   notes?: string | null;
 };
 
@@ -39,6 +40,7 @@ export type NewFoodPayload = {
   kj_per_unit?: number | string;
   protein_per_unit?: number | string;
   unit_label?: string;
+  unit_weight_g?: number | string;
   notes?: string | null;
 };
 

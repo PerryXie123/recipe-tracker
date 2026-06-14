@@ -7,12 +7,14 @@ create table if not exists public.foods (
   kj_per_unit numeric not null check (kj_per_unit >= 0),
   protein_per_unit numeric not null check (protein_per_unit >= 0),
   unit_label text not null default '100g',
+  unit_weight_g numeric not null default 100 check (unit_weight_g >= 0),
   notes text,
   created_at timestamptz not null default now()
 );
 
 alter table public.foods
   add column if not exists kj_per_unit numeric,
+  add column if not exists unit_weight_g numeric not null default 100,
   add column if not exists user_id uuid references auth.users(id) on delete cascade;
 
 alter table public.foods
@@ -29,10 +31,6 @@ update public.foods
 set kj_per_unit = round(calories_per_unit * 4.184, 1)
 where kj_per_unit is null;
 
-update public.foods
-set unit_label = '100g'
-where unit_label is distinct from '100g';
-
 alter table public.foods
   alter column kj_per_unit set not null;
 
@@ -45,6 +43,18 @@ begin
   ) then
     alter table public.foods
       add constraint foods_kj_per_unit_nonnegative check (kj_per_unit >= 0);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'foods_unit_weight_g_nonnegative'
+  ) then
+    alter table public.foods
+      add constraint foods_unit_weight_g_nonnegative check (unit_weight_g >= 0);
   end if;
 end $$;
 
@@ -180,13 +190,13 @@ create policy "Users delete their recipe ingredients" on public.recipe_ingredien
     )
   );
 
-insert into public.foods (name, calories_per_unit, kj_per_unit, protein_per_unit, unit_label, notes)
+insert into public.foods (name, calories_per_unit, kj_per_unit, protein_per_unit, unit_label, unit_weight_g, notes)
 values
-  ('Egg', 155, 648.5, 12.6, '100g', null),
-  ('Rolled oats', 382.4, 1600, 13.4, '100g', null),
-  ('Greek yoghurt', 102.8, 430.1, 4.6, '100g', null),
-  ('Chicken breast', 165, 690.4, 31, '100g', 'cooked'),
-  ('Rice', 170, 711.3, 3.8, '100g', 'cooked')
+  ('Egg', 155, 648.5, 12.6, '100g', 100, null),
+  ('Rolled oats', 382.4, 1600, 13.4, '100g', 100, null),
+  ('Greek yoghurt', 102.8, 430.1, 4.6, '100g', 100, null),
+  ('Chicken breast', 165, 690.4, 31, '100g', 100, 'cooked'),
+  ('Rice', 170, 711.3, 3.8, '100g', 100, 'cooked')
 on conflict do nothing;
 
 insert into public.recipes (name, category, target_plan)

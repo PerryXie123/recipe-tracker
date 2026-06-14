@@ -20,7 +20,7 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
     const supabase = getSupabaseForUser(auth);
     const recipes = await supabase<SupabaseRecipe[]>("recipes?select=*&order=created_at.desc");
     const ingredients = await supabase<SupabaseIngredient[]>(
-      "recipe_ingredients?select=id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label)"
+      "recipe_ingredients?select=id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label,unit_weight_g)"
     );
 
     return recipes.map((recipe) => {
@@ -32,9 +32,9 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
             food_id: food.id,
             food_name: food.name,
             weight_g: Number(ingredient.quantity),
-            calories: (Number(food.calories_per_unit) * Number(ingredient.quantity)) / 100,
-            kj: (Number(food.kj_per_unit) * Number(ingredient.quantity)) / 100,
-            protein: (Number(food.protein_per_unit) * Number(ingredient.quantity)) / 100
+            calories: (Number(food.calories_per_unit) * Number(ingredient.quantity)) / getFoodBasisWeight(food),
+            kj: (Number(food.kj_per_unit) * Number(ingredient.quantity)) / getFoodBasisWeight(food),
+            protein: (Number(food.protein_per_unit) * Number(ingredient.quantity)) / getFoodBasisWeight(food)
           };
         });
 
@@ -179,13 +179,22 @@ function getDemoRecipeWithIngredientTotals(recipe: Recipe): RecipeWithTotals {
       food_id: food.id,
       food_name: food.name,
       weight_g: ingredient.weight_g,
-      calories: round1((food.calories_per_unit * ingredient.weight_g) / 100),
-      kj: round1((food.kj_per_unit * ingredient.weight_g) / 100),
-      protein: round1((food.protein_per_unit * ingredient.weight_g) / 100)
+      calories: round1((food.calories_per_unit * ingredient.weight_g) / getFoodBasisWeight(food)),
+      kj: round1((food.kj_per_unit * ingredient.weight_g) / getFoodBasisWeight(food)),
+      protein: round1((food.protein_per_unit * ingredient.weight_g) / getFoodBasisWeight(food))
     };
   });
 
   return withRecipeTotals({ ...recipe, ingredients });
+}
+
+function getFoodBasisWeight(food: { unit_label: string; unit_weight_g?: number | string | null }) {
+  if (food.unit_label === "100g") {
+    return 100;
+  }
+
+  const unitWeight = Number(food.unit_weight_g || 0);
+  return Number.isFinite(unitWeight) && unitWeight > 0 ? unitWeight : 100;
 }
 
 function withRecipeTotals(recipe: Recipe): RecipeWithTotals {

@@ -1153,6 +1153,16 @@ th {
   gap: 8px;
 }
 
+.unit-section {
+  display: grid;
+  gap: 8px;
+}
+
+.unit-section .segmented-control {
+  width: 100%;
+  grid-auto-columns: minmax(0, 1fr);
+}
+
 .form-message,
 .selected-note {
   min-height: 18px;

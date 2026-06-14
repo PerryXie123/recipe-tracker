@@ -8,7 +8,7 @@ import {
 } from "@tabler/icons-react";
 import type { CSSProperties } from "react";
 import { Badge, Button, Panel } from "../components/ui";
-import { formatNumber } from "../lib/format";
+import { formatNumber, formatUnitBasis } from "../lib/format";
 import { mealSlots, toDateKey, type MealPlan } from "../lib/planning";
 import type { Route } from "../lib/routing";
 import type { Food, Recipe } from "../types";
@@ -56,7 +56,7 @@ export function HomePage({
   return (
     <section className="donezo-dashboard">
       <section className="metric-grid">
-        <MetricCard tone="primary" title="Total Ingredients" value={foods.length} note="Foods saved per 100g" onClick={() => onNavigate("ingredients")} />
+        <MetricCard tone="primary" title="Total Ingredients" value={foods.length} note="Saved nutrition bases" onClick={() => onNavigate("ingredients")} />
         <MetricCard title="Saved Meals" value={recipes.length} note="Recipes ready to plan" onClick={() => onNavigate("meals")} />
         <MetricCard title="Planned Calories" value={formatNumber(todayCalories)} note={currentTdeeTarget ? `${formatNumber(currentTdeeTarget)} target` : "Set a nutrition target"} onClick={() => onNavigate("calendar")} />
         <MetricCard title="Saved Protein" value={`${formatNumber(totals.protein)}g`} note="Across all saved meals" onClick={() => onNavigate("favorites")} />
@@ -128,7 +128,7 @@ export function HomePage({
                   <strong>{food.name}</strong>
                   <small>{formatNumber(food.calories_per_unit)} cal • {formatNumber(food.protein_per_unit)}g protein</small>
                 </span>
-                <Badge className="status-cool">per 100g</Badge>
+                <Badge className="status-cool">{formatUnitBasis(food.unit_label, food.unit_weight_g)}</Badge>
               </button>
             ))}
             {foods.length === 0 ? <EmptyMini title="No ingredients yet" body="Add foods to build your meal library." /> : null}

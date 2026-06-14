@@ -1,11 +1,11 @@
 import type { Food, Recipe } from "../types.js";
 
 export let demoFoods: Food[] = [
-  { id: "demo-egg", name: "Egg", calories_per_unit: 155, kj_per_unit: 648.5, protein_per_unit: 12.6, unit_label: "100g" },
-  { id: "demo-oats", name: "Rolled oats", calories_per_unit: 382.4, kj_per_unit: 1600, protein_per_unit: 13.4, unit_label: "100g" },
-  { id: "demo-chicken", name: "Chicken breast", calories_per_unit: 165, kj_per_unit: 690.4, protein_per_unit: 31, unit_label: "100g" },
-  { id: "demo-rice", name: "Rice", calories_per_unit: 170, kj_per_unit: 711.3, protein_per_unit: 3.8, unit_label: "100g" },
-  { id: "demo-yoghurt", name: "Greek yoghurt", calories_per_unit: 102.8, kj_per_unit: 430.1, protein_per_unit: 4.6, unit_label: "100g" }
+  { id: "demo-egg", name: "Egg", calories_per_unit: 155, kj_per_unit: 648.5, protein_per_unit: 12.6, unit_label: "100g", unit_weight_g: 100 },
+  { id: "demo-oats", name: "Rolled oats", calories_per_unit: 382.4, kj_per_unit: 1600, protein_per_unit: 13.4, unit_label: "100g", unit_weight_g: 100 },
+  { id: "demo-chicken", name: "Chicken breast", calories_per_unit: 165, kj_per_unit: 690.4, protein_per_unit: 31, unit_label: "100g", unit_weight_g: 100 },
+  { id: "demo-rice", name: "Rice", calories_per_unit: 170, kj_per_unit: 711.3, protein_per_unit: 3.8, unit_label: "100g", unit_weight_g: 100 },
+  { id: "demo-yoghurt", name: "Greek yoghurt", calories_per_unit: 102.8, kj_per_unit: 430.1, protein_per_unit: 4.6, unit_label: "100g", unit_weight_g: 100 }
 ];
 
 export let demoRecipes: Recipe[] = [

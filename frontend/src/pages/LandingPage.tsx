@@ -121,8 +121,8 @@ export function LandingPage({
                     {["Chicken breast", "Brown rice", "Greek yoghurt", "Avocado"].map((name, index) => (
                       <div className="mock-recipe-row" key={name}>
                         <span className="mini-avatar">{name[0]}</span>
-                        <span><strong>{name}</strong><small>{index * 40 + 120} cal • per 100g</small></span>
-                        <span className="badge">per 100g</span>
+                        <span><strong>{name}</strong><small>{index * 40 + 120} cal • flexible basis</small></span>
+                        <span className="badge">per unit</span>
                       </div>
                     ))}
                   </div>
