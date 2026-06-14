@@ -26,7 +26,11 @@ export const supabase = isSupabaseAuthConfigured
   : null;
 
 function getEnvValue(value: string | undefined) {
-  const trimmed = value?.trim();
+  const trimmed = value
+    ?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .replace(/\s+/g, "");
   return trimmed || undefined;
 }
 

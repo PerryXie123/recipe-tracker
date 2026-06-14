@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { sendJson, sendOptions } from "../backend/src/http";
-import { normalizeSupabaseUrl } from "../backend/src/config/env";
+import { normalizeSupabaseUrl, sanitizeEnvValue } from "../backend/src/config/env";
 import { createSupabaseClient } from "../backend/src/lib/supabase";
 import { createApiHandler } from "../backend/src/routes/api";
 import { createFoodService } from "../backend/src/services/foods";
@@ -8,10 +8,10 @@ import { createRecipeService } from "../backend/src/services/recipes";
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const supabaseKey =
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  process.env.SUPABASE_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
+  sanitizeEnvValue(process.env.SUPABASE_ANON_KEY) ||
+  sanitizeEnvValue(process.env.SUPABASE_PUBLISHABLE_KEY) ||
+  sanitizeEnvValue(process.env.SUPABASE_KEY) ||
+  sanitizeEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
 const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
 
 const handleApi = createApiHandler({

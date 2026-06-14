@@ -28,5 +28,13 @@ export function normalizeSupabaseUrl(value: string | undefined) {
     return undefined;
   }
 
-  return value.replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
+  return sanitizeEnvValue(value)?.replace(/\/rest\/v1\/?$/i, "").replace(/\/+$/, "");
+}
+
+export function sanitizeEnvValue(value: string | undefined) {
+  return value
+    ?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bearer\s+/i, "")
+    .replace(/\s+/g, "") || undefined;
 }
