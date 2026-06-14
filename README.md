@@ -62,6 +62,41 @@ npm run build:backend    # build backend only
 npm run start            # run built backend
 ```
 
+## Deploying to Vercel
+
+This repo is configured for a single Vercel deployment:
+
+- Static Vite app: `frontend/dist`
+- API routes: `api/[...path].ts`
+- Vercel config: `vercel.json`
+
+In Vercel, import the GitHub repo and keep the project root as the repository root. The checked-in `vercel.json` sets:
+
+```text
+Build Command: npm run build:frontend
+Output Directory: frontend/dist
+```
+
+Add these Environment Variables in Vercel Project Settings for Production and Preview:
+
+```bash
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-or-anon-key
+
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-publishable-or-anon-key
+```
+
+Use the publishable/anon key for this app. Do not add a service role key as a `VITE_*` variable.
+
+After the first deployment, add your Vercel URL in Supabase Auth redirect URLs:
+
+```text
+https://your-app.vercel.app
+```
+
+The app also supports `/favourites` as the British English route for saved meals.
+
 ## App Layout
 
 ```text
