@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { isSupabaseAuthConfigured, supabase, supabaseAuthConfigMessage, supabasePublishableKey } from "../lib/supabase";
+import { isSupabaseAuthConfigured, supabase, supabaseAuthConfigMessage } from "../lib/supabase";
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -30,16 +30,13 @@ export function useAuth() {
       return;
     }
 
-    const queryParams = {
-      prompt: "select_account",
-      ...(supabasePublishableKey ? { apikey: supabasePublishableKey } : {})
-    };
-
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: window.location.origin,
-        queryParams
+        queryParams: {
+          prompt: "select_account"
+        }
       }
     });
   }
