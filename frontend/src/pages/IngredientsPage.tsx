@@ -1,9 +1,9 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Button, Group, Paper, Text, TextInput, Title } from "@mantine/core";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
+import { Badge, Button, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewFood } from "../types";
 
@@ -106,36 +106,35 @@ export function IngredientsPage({
     <section className="page-stack" onPointerDown={handlePagePointerDown}>
       <header className="page-header">
         <div>
-          <Text className="eyebrow">Ingredients</Text>
-          <Title order={1}>Ingredients</Title>
+          <p className="eyebrow">Ingredients</p>
+          <h1>Ingredients</h1>
         </div>
-        <Badge variant="light">{filteredFoods.length} matches</Badge>
+        <Badge>{filteredFoods.length} matches</Badge>
       </header>
 
       <section className="content-layout">
-        <Paper className="panel ingredients-panel" withBorder>
+        <Panel className="ingredients-panel">
           <div className="toolbar">
             <TextInput
               className="search-field"
               label="Search ingredients"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
               placeholder="Search by name"
             />
-            <Group gap={8}>
+            <div className="inline-actions">
               {isConfirmingBulkDelete ? (
                 <>
-                  <Button color="red" type="button" onClick={handleBulkDelete}>
+                  <Button variant="danger" type="button" onClick={handleBulkDelete}>
                     Confirm
                   </Button>
-                  <Button variant="default" type="button" onClick={() => setIsConfirmingBulkDelete(false)}>
+                  <Button variant="secondary" type="button" onClick={() => setIsConfirmingBulkDelete(false)}>
                     Cancel
                   </Button>
                 </>
               ) : (
                 <Button
-                  color="red"
-                  variant="subtle"
+                  variant="danger"
                   type="button"
                   disabled={checkedFoodIds.length === 0}
                   onClick={handleBulkDelete}
@@ -143,7 +142,7 @@ export function IngredientsPage({
                   Delete selected
                 </Button>
               )}
-            </Group>
+            </div>
           </div>
 
           <IngredientTable
@@ -160,7 +159,7 @@ export function IngredientsPage({
             onPrevious={() => setPage(visibleFoods.page - 1)}
             onNext={() => setPage(visibleFoods.page + 1)}
           />
-        </Paper>
+        </Panel>
 
         <FoodForm
           food={foodForm}

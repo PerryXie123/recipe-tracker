@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { MantineProvider } from "@mantine/core";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
 import { useRecipeTracker } from "./hooks/useRecipeTracker";
@@ -77,7 +76,7 @@ export function App() {
   }, []);
 
   return (
-    <MantineProvider forceColorScheme={theme}>
+    <>
       {!auth.userEmail ? (
         <LandingPage
           authConfigured={auth.authConfigured}
@@ -195,6 +194,6 @@ export function App() {
         ) : null}
       </Layout>
       )}
-    </MantineProvider>
+    </>
   );
 }

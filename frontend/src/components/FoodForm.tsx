@@ -1,8 +1,8 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
-import { Button, Group, NumberInput, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { formatNumber } from "../lib/format";
 import type { NewFood } from "../types";
+import { Button, NumericInput, Panel, TextInput } from "./ui";
 
 type FoodFormProps = {
   food: NewFood;
@@ -46,83 +46,83 @@ export function FoodForm({
   }
 
   return (
-    <Paper component="form" className="form-panel" onSubmit={handleSubmit} withBorder>
+    <Panel as="form" className="form-panel" onSubmit={handleSubmit}>
       <div>
-        <Text className="eyebrow">Ingredient</Text>
-        <Title order={2}>{isEditing ? "Edit ingredient" : "Add ingredient"}</Title>
+        <p className="eyebrow">Ingredient</p>
+        <h2>{isEditing ? "Edit ingredient" : "Add ingredient"}</h2>
       </div>
 
       <TextInput
         label="Name"
         value={food.name}
-        onChange={(event) => onChange({ ...food, name: event.target.value })}
+        onChange={(name) => onChange({ ...food, name })}
         placeholder="Cottage cheese"
         required
       />
 
       <div className="form-grid">
-        <NumberInput
+        <NumericInput
           label="Calories"
           value={food.calories_per_unit}
-          onChange={(value) => onCaloriesChange(Number(value))}
+          onChange={onCaloriesChange}
           min={0}
           step={0.1}
           required
         />
 
-        <NumberInput
+        <NumericInput
           label="kJ"
           value={food.kj_per_unit}
-          onChange={(value) => onKjChange(Number(value))}
+          onChange={onKjChange}
           min={0}
           step={0.1}
           required
         />
       </div>
 
-      <NumberInput
+      <NumericInput
         label="Protein"
         value={food.protein_per_unit}
-        onChange={(value) => onChange({ ...food, protein_per_unit: Number(value) })}
+        onChange={(protein_per_unit) => onChange({ ...food, protein_per_unit })}
         min={0}
         step={0.1}
         required
       />
 
-      <Paper className="fixed-field" withBorder>
-        <Text c="dimmed" size="sm" fw={700}>Unit</Text>
-        <Text fw={700}>100g</Text>
-      </Paper>
+      <div className="fixed-field">
+        <span className="muted small strong">Unit</span>
+        <strong>100g</strong>
+      </div>
 
-      <Stack gap={8}>
+      <div className="button-stack">
         <Button type="submit" loading={isSaving}>
           {isEditing ? "Save ingredient" : "Add ingredient"}
         </Button>
         {isEditing ? (
-          <Button variant="default" type="button" onClick={onCancel}>
+          <Button variant="secondary" type="button" onClick={onCancel}>
             Cancel edit
           </Button>
         ) : null}
         {isEditing && onDelete ? (
           isConfirmingDelete ? (
-            <Group grow gap={8}>
-              <Button color="red" type="button" onClick={handleConfirmDelete}>
+            <div className="split-actions">
+              <Button variant="danger" type="button" onClick={handleConfirmDelete}>
                 Confirm
               </Button>
-              <Button variant="default" type="button" onClick={() => setIsConfirmingDelete(false)}>
+              <Button variant="secondary" type="button" onClick={() => setIsConfirmingDelete(false)}>
                 Cancel
               </Button>
-            </Group>
+            </div>
           ) : (
-            <Button color="red" type="button" onClick={() => setIsConfirmingDelete(true)}>
+            <Button variant="danger" type="button" onClick={() => setIsConfirmingDelete(true)}>
               Delete ingredient
             </Button>
           )
         ) : null}
-      </Stack>
-      <Text className="form-message" role="status">
+      </div>
+      <p className="form-message" role="status">
         {message || `Values are per ${formatNumber(100)}g.`}
-      </Text>
-    </Paper>
+      </p>
+    </Panel>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button, NumberInput, Paper, SegmentedControl, Select, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Button, NumericInput, Panel, SegmentedControl, SelectInput } from "../components/ui";
 import { formatNumber } from "../lib/format";
 
 const activityMultipliers = {
@@ -46,32 +46,32 @@ export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
   return (
     <section className="page-stack">
       <section className="tdee-layout">
-        <Paper className="form-panel" withBorder>
+        <Panel className="form-panel">
           <div>
-            <Text className="eyebrow">Calculator</Text>
-            <Title order={2}>Inputs</Title>
+            <p className="eyebrow">Calculator</p>
+            <h2>Inputs</h2>
           </div>
 
           <SegmentedControl
             value={sex}
             onChange={(value) => setSex(value as Sex)}
-            data={[
+            options={[
               { label: "Male", value: "male" },
               { label: "Female", value: "female" }
             ]}
           />
 
-          <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
-            <NumberInput label="Age" value={age} onChange={(value) => setAge(Number(value) || 0)} min={0} />
-            <NumberInput label="Height (cm)" value={height} onChange={(value) => setHeight(Number(value) || 0)} min={0} />
-            <NumberInput label="Weight (kg)" value={weight} onChange={(value) => setWeight(Number(value) || 0)} min={0} />
-          </SimpleGrid>
+          <div className="three-grid">
+            <NumericInput label="Age" value={age} onChange={setAge} min={0} />
+            <NumericInput label="Height (cm)" value={height} onChange={setHeight} min={0} />
+            <NumericInput label="Weight (kg)" value={weight} onChange={setWeight} min={0} />
+          </div>
 
-          <Select
+          <SelectInput
             label="Activity"
             value={activity}
             onChange={(value) => setActivity((value || "moderate") as Activity)}
-            data={[
+            options={[
               { value: "sedentary", label: "Sedentary" },
               { value: "light", label: "Light activity" },
               { value: "moderate", label: "Moderate activity" },
@@ -83,49 +83,48 @@ export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
           <SegmentedControl
             value={goal}
             onChange={(value) => setGoal(value as Goal)}
-            data={[
+            options={[
               { label: "Cut", value: "cut" },
               { label: "Maintain", value: "maintain" },
               { label: "Gain", value: "gain" }
             ]}
           />
-        </Paper>
+        </Panel>
 
-        <Paper className="panel tdee-results" withBorder>
+        <Panel className="tdee-results">
           <div>
-            <Text className="eyebrow">Estimate</Text>
-            <Title order={2}>{formatNumber(result.target)} cal/day</Title>
-            <Text c="dimmed">Target calories based on your selected goal.</Text>
-            <Button mt="md" type="button" onClick={() => onSetCurrentTarget(Math.round(result.target))}>
-              Set for current period
-            </Button>
+            <p className="eyebrow">Estimate</p>
+            <h2>{formatNumber(result.target)} cal/day</h2>
+            <p className="muted">Target calories based on your selected goal.</p>
+            <div className="mt-16">
+              <Button type="button" onClick={() => onSetCurrentTarget(Math.round(result.target))}>
+                Set for current period
+              </Button>
+            </div>
             {currentTarget ? (
-              <Text c="dimmed" size="sm" mt={8}>
+              <p className="muted small mt-8">
                 Current period target: {formatNumber(currentTarget)} cal/day
-              </Text>
+              </p>
             ) : null}
           </div>
 
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <Paper className="result-tile" withBorder>
-              <Text c="dimmed" size="sm" fw={800}>BMR</Text>
-              <Title order={3}>{formatNumber(result.bmr)}</Title>
-            </Paper>
-            <Paper className="result-tile" withBorder>
-              <Text c="dimmed" size="sm" fw={800}>TDEE</Text>
-              <Title order={3}>{formatNumber(result.tdee)}</Title>
-            </Paper>
-            <Paper className="result-tile" withBorder>
-              <Text c="dimmed" size="sm" fw={800}>Protein range</Text>
-              <Title order={3}>{formatNumber(result.proteinLow)}-{formatNumber(result.proteinHigh)}g</Title>
-            </Paper>
-            <Paper className="result-tile" withBorder>
-              <Text c="dimmed" size="sm" fw={800}>Goal</Text>
-              <Title order={3}>{goal}</Title>
-            </Paper>
-          </SimpleGrid>
-        </Paper>
+          <div className="result-grid">
+            <ResultTile label="BMR" value={formatNumber(result.bmr)} />
+            <ResultTile label="TDEE" value={formatNumber(result.tdee)} />
+            <ResultTile label="Protein range" value={`${formatNumber(result.proteinLow)}-${formatNumber(result.proteinHigh)}g`} />
+            <ResultTile label="Goal" value={goal} />
+          </div>
+        </Panel>
       </section>
     </section>
+  );
+}
+
+function ResultTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="result-tile">
+      <span className="muted small strong">{label}</span>
+      <h3>{value}</h3>
+    </div>
   );
 }

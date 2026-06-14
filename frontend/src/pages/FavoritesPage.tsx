@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Paper, Text, TextInput, Title } from "@mantine/core";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
+import { Badge, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Recipe } from "../types";
 
-const FAVORITES_PER_PAGE = 12;
+const FAVOURITES_PER_PAGE = 12;
 
 type FavoritesPageProps = {
   recipes: Recipe[];
@@ -52,34 +52,34 @@ export function FavoritesPage({
     });
   }, [favoriteRecipes, search]);
 
-  const visibleRecipes = paginate(filteredRecipes, page, FAVORITES_PER_PAGE);
+  const visibleRecipes = paginate(filteredRecipes, page, FAVOURITES_PER_PAGE);
 
   return (
     <section className="page-stack">
       <header className="page-header">
         <div>
-          <Text className="eyebrow">Favorites</Text>
-          <Title order={1}>Favorites</Title>
+          <p className="eyebrow">Favourites</p>
+          <h1>Favourites</h1>
         </div>
-        <Badge variant="light">{filteredRecipes.length} saved</Badge>
+        <Badge>{filteredRecipes.length} saved</Badge>
       </header>
 
-      <Paper className="panel" withBorder>
+      <Panel>
         <div className="toolbar">
           <TextInput
             className="search-field"
-            label="Search favorites"
+            label="Search favourites"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={setSearch}
             placeholder="Search name, category, or ingredient"
           />
         </div>
 
         {filteredRecipes.length === 0 ? (
-          <Paper className="empty-state" withBorder>
-            <Text fw={700}>No favorite meals yet</Text>
-            <Text c="dimmed" size="sm">Use the star on a meal card to add it here.</Text>
-          </Paper>
+          <div className="empty-state">
+            <strong>No favourite meals yet</strong>
+            <p className="muted small">Use the star on a meal card to add it here.</p>
+          </div>
         ) : (
           <div className="meal-grid" aria-live="polite">
             {visibleRecipes.items.map((recipe) => (
@@ -106,7 +106,7 @@ export function FavoritesPage({
           onPrevious={() => setPage(visibleRecipes.page - 1)}
           onNext={() => setPage(visibleRecipes.page + 1)}
         />
-      </Paper>
+      </Panel>
     </section>
   );
 }

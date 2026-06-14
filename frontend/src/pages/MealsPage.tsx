@@ -1,9 +1,9 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Group, Paper, Text, TextInput, Title } from "@mantine/core";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
+import { Button, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewRecipe, Recipe } from "../types";
 
@@ -130,32 +130,31 @@ export function MealsPage({
     <section className="page-stack" onPointerDown={handlePagePointerDown}>
       <header className="page-header">
         <div>
-          <Text className="eyebrow">Meals</Text>
-          <Title order={1}>Meals</Title>
+          <p className="eyebrow">Meals</p>
+          <h1>Meals</h1>
         </div>
       </header>
 
       <section className="content-layout meals-layout">
-        <Paper className="panel" withBorder>
+        <Panel>
           <div className="toolbar">
             <TextInput
               className="search-field"
               label="Search meals"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={setSearch}
               placeholder="Search name, category, or ingredient"
             />
-            <Group gap={8}>
+            <div className="inline-actions">
               <Button
-                color="red"
-                variant="subtle"
+                variant="danger"
                 type="button"
                 disabled={checkedRecipeIds.length === 0}
                 onClick={handleBulkDelete}
               >
                 Delete selected
               </Button>
-            </Group>
+            </div>
           </div>
 
           <div className="meal-grid" aria-live="polite">
@@ -181,7 +180,7 @@ export function MealsPage({
             onPrevious={() => setPage(visibleRecipes.page - 1)}
             onNext={() => setPage(visibleRecipes.page + 1)}
           />
-        </Paper>
+        </Panel>
 
         <div className="right-panel-stack">
           <RecipeForm

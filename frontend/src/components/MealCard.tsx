@@ -1,7 +1,7 @@
-import { ActionIcon, Badge, Checkbox, Group, NumberInput, Paper, SimpleGrid, Text, Title, Tooltip } from "@mantine/core";
 import { IconStar } from "@tabler/icons-react";
 import { formatNumber } from "../lib/format";
 import type { Recipe } from "../types";
+import { Badge, Checkbox, IconButton, NumericInput } from "./ui";
 
 type MealCardProps = {
   recipe: Recipe;
@@ -34,78 +34,74 @@ export function MealCard({
   onFavoriteToggle
 }: MealCardProps) {
   return (
-    <Paper
-      component="button"
-      type="button"
-      className={selected ? "meal-card selected" : "meal-card"}
-      withBorder
+    <div
+      role="button"
+      tabIndex={0}
+      className={selected ? "panel-surface meal-card selected" : "panel-surface meal-card"}
       onClick={() => onSelect(recipe)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(recipe);
+        }
+      }}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
+      <div className="card-header">
         <div>
-          <Title order={3}>{recipe.name}</Title>
-          <Text c="dimmed" size="sm">
-            {formatNumber(recipe.total_weight_g || 0)}g total weight
-          </Text>
+          <h3>{recipe.name}</h3>
+          <p className="muted small">{formatNumber(recipe.total_weight_g || 0)}g total weight</p>
         </div>
-        <Group gap={6} wrap="nowrap">
-          <Tooltip label={isFavorite ? "Remove favorite" : "Favorite meal"}>
-            <ActionIcon
-              color="yellow"
-              variant={isFavorite ? "filled" : "subtle"}
-              type="button"
-              aria-label={isFavorite ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`}
-              aria-pressed={isFavorite}
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                onFavoriteToggle();
-              }}
+        <div className="inline-actions">
+          <span onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}>
+            <IconButton
+              label={isFavorite ? `Remove ${recipe.name} from favourites` : `Add ${recipe.name} to favourites`}
+              pressed={isFavorite}
+              variant={isFavorite ? "subtle" : "secondary"}
+              onClick={() => onFavoriteToggle()}
             >
               <IconStar size={16} fill={isFavorite ? "currentColor" : "none"} />
-            </ActionIcon>
-          </Tooltip>
+            </IconButton>
+          </span>
           {selectable ? (
             <Checkbox
               checked={checked}
-              aria-label={`Select ${recipe.name}`}
+              label={`Select ${recipe.name}`}
               onClick={(event) => event.stopPropagation()}
-              onChange={(event) => onCheckedChange(event.currentTarget.checked)}
+              onChange={onCheckedChange}
             />
           ) : null}
-        </Group>
-      </Group>
+        </div>
+      </div>
 
-      <Group gap={8}>
-        <Badge variant="light">{recipe.category || "Meal"}</Badge>
-        <Badge variant="default">{formatNumber(recipe.calories)} cal</Badge>
-        <Badge variant="default">{formatNumber(recipe.protein)}g protein</Badge>
-      </Group>
+      <div className="badge-row">
+        <Badge>{recipe.category || "Meal"}</Badge>
+        <Badge>{formatNumber(recipe.calories)} cal</Badge>
+        <Badge>{formatNumber(recipe.protein)}g protein</Badge>
+      </div>
 
       <div
         className="card-portion"
         onClick={(event) => event.stopPropagation()}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <NumberInput
+        <NumericInput
           label="Portion (g)"
           value={portionTotals.weight}
-          onChange={(value) => onPortionChange(Number(value))}
+          onChange={onPortionChange}
           min={0}
           step={0.1}
-          size="xs"
         />
-        <SimpleGrid cols={2} spacing={8}>
-          <Paper className="card-portion-metric" withBorder>
-            <Text c="dimmed" size="xs" fw={700}>Calories</Text>
-            <Text fw={800}>{formatNumber(portionTotals.calories)}</Text>
-          </Paper>
-          <Paper className="card-portion-metric" withBorder>
-            <Text c="dimmed" size="xs" fw={700}>Protein</Text>
-            <Text fw={800}>{formatNumber(portionTotals.protein)}g</Text>
-          </Paper>
-        </SimpleGrid>
+        <div className="portion-results">
+          <div className="card-portion-metric">
+            <span className="muted small strong">Calories</span>
+            <strong>{formatNumber(portionTotals.calories)}</strong>
+          </div>
+          <div className="card-portion-metric">
+            <span className="muted small strong">Protein</span>
+            <strong>{formatNumber(portionTotals.protein)}g</strong>
+          </div>
+        </div>
       </div>
-    </Paper>
+    </div>
   );
 }

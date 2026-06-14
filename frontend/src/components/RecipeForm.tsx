@@ -1,9 +1,9 @@
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { ActionIcon, Button, Group, NumberInput, Paper, Select, Stack, Text, TextInput, Title } from "@mantine/core";
 import { IconMinus } from "@tabler/icons-react";
 import { formatNumber } from "../lib/format";
 import type { Food, NewRecipe } from "../types";
+import { Button, IconButton, NumericInput, Panel, SelectInput, TextInput } from "./ui";
 
 type RecipeFormProps = {
   recipe: NewRecipe;
@@ -26,6 +26,8 @@ type RecipeFormProps = {
   onRemoveIngredient: (index: number) => void;
   onDelete?: () => void;
 };
+
+const categoryOptions = ["Meal", "Breakfast", "Lunch", "Dinner", "Snack"].map((value) => ({ value, label: value }));
 
 export function RecipeForm({
   recipe,
@@ -84,41 +86,41 @@ export function RecipeForm({
   }
 
   return (
-    <Paper component="form" className="form-panel" onSubmit={handleSubmit} withBorder>
+    <Panel as="form" className="form-panel" onSubmit={handleSubmit}>
       <div>
-        <Text className="eyebrow">Meal</Text>
-        <Title order={2}>{isEditing ? "Meal details" : "Add meal"}</Title>
+        <p className="eyebrow">Meal</p>
+        <h2>{isEditing ? "Meal details" : "Add meal"}</h2>
       </div>
 
       <TextInput
         label="Name"
         value={recipe.name}
-        onChange={(event) => onChange({ ...recipe, name: event.target.value })}
+        onChange={(name) => onChange({ ...recipe, name })}
         placeholder="Chicken rice bowl"
         required
       />
 
-      <Select
+      <SelectInput
         label="Category"
         value={recipe.category}
-        onChange={(value) => onChange({ ...recipe, category: value || "Meal" })}
-        data={["Meal", "Breakfast", "Lunch", "Dinner", "Snack"]}
+        onChange={(category) => onChange({ ...recipe, category: category || "Meal" })}
+        options={categoryOptions}
       />
 
       <div className="form-grid weight-grid">
-        <NumberInput
+        <NumericInput
           label="Total weight (g)"
           value={recipe.total_weight_g}
-          onChange={(value) => onManualWeightChange(Number(value))}
+          onChange={onManualWeightChange}
           min={0}
           step={0.1}
         />
 
-        <Button variant="default" className="inline-button" type="button" onClick={onRegenerateWeight}>
+        <Button variant="secondary" className="inline-button" type="button" onClick={onRegenerateWeight}>
           Regenerate
         </Button>
       </div>
-      <Text className="form-message">Ingredient weight total: {formatNumber(ingredientWeightTotal)}g</Text>
+      <p className="form-message">Ingredient weight total: {formatNumber(ingredientWeightTotal)}g</p>
 
       <div className="builder-list" ref={autocompleteRef}>
         {recipe.ingredients.map((ingredient, index) => {
@@ -133,90 +135,87 @@ export function RecipeForm({
                   label="Ingredient"
                   value={query}
                   onFocus={() => setActiveIngredientIndex(index)}
-                  onChange={(event) => {
+                  onChange={(value) => {
                     setActiveIngredientIndex(index);
-                    onIngredientQueryChange(index, event.target.value);
+                    onIngredientQueryChange(index, value);
                   }}
                   placeholder="Search ingredient"
                   required
                 />
                 {activeIngredientIndex === index && query ? (
-                  <Paper className="autocomplete-menu" withBorder>
+                  <div className="autocomplete-menu">
                     {matches.map((food) => (
                       <Button
-                        justify="space-between"
+                        className="autocomplete-option"
                         variant="subtle"
-                        color="gray"
                         type="button"
-                        onMouseDown={(event) => event.preventDefault()}
                         onClick={() => handleChooseIngredient(index, food)}
                         key={food.id}
                       >
                         <span>{food.name}</span>
                       </Button>
                     ))}
-                    {matches.length === 0 ? <Text c="dimmed" size="xs">No matches</Text> : null}
-                  </Paper>
+                    {matches.length === 0 ? <span className="muted small">No matches</span> : null}
+                  </div>
                 ) : null}
-                {selectedFood ? <Text className="selected-note">Selected: {selectedFood.name}</Text> : null}
+                {selectedFood ? <p className="selected-note">Selected: {selectedFood.name}</p> : null}
               </div>
 
-              <NumberInput
+              <NumericInput
                 label="Weight (g)"
                 value={ingredient.weight_g}
-                onChange={(value) => onIngredientWeightChange(index, Number(value))}
+                onChange={(weight) => onIngredientWeightChange(index, weight)}
                 min={0}
                 step={0.1}
                 required
               />
 
-              <ActionIcon
-                className="icon-button"
-                variant="default"
+              <IconButton
+                className="builder-remove"
+                label="Remove ingredient"
                 type="button"
-                aria-label="Remove ingredient"
                 onClick={() => onRemoveIngredient(index)}
               >
                 <IconMinus size={16} />
-              </ActionIcon>
+              </IconButton>
             </div>
           );
         })}
       </div>
 
-      <Button variant="default" type="button" onClick={onAddIngredient}>
+      <Button variant="secondary" type="button" onClick={onAddIngredient}>
         Add ingredient
       </Button>
 
-      <Stack gap={8}>
+      <div className="button-stack">
         <Button type="submit" loading={isSaving} disabled={foods.length === 0}>
           {isEditing ? "Save meal" : "Add meal"}
         </Button>
         {isEditing ? (
-          <Button variant="default" type="button" onClick={onCancel}>
+          <Button variant="secondary" type="button" onClick={onCancel}>
             Cancel edit
           </Button>
         ) : null}
         {isEditing && onDelete ? (
           isConfirmingDelete ? (
-            <Group grow gap={8}>
-              <Button color="red" type="button" onClick={handleConfirmDelete}>
+            <div className="split-actions">
+              <Button variant="danger" type="button" onClick={handleConfirmDelete}>
                 Confirm
               </Button>
-              <Button variant="default" type="button" onClick={() => setIsConfirmingDelete(false)}>
+              <Button variant="secondary" type="button" onClick={() => setIsConfirmingDelete(false)}>
                 Cancel
               </Button>
-            </Group>
+            </div>
           ) : (
-            <Button color="red" type="button" onClick={() => setIsConfirmingDelete(true)}>
+            <Button variant="danger" type="button" onClick={() => setIsConfirmingDelete(true)}>
               Delete meal
             </Button>
           )
         ) : null}
-      </Stack>
-      <Text className="form-message" role="status">
+      </div>
+      <p className="form-message" role="status">
         {foods.length === 0 ? "Add at least one ingredient first." : message}
-      </Text>
-    </Paper>
+      </p>
+    </Panel>
   );
 }

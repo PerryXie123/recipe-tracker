@@ -1,4 +1,4 @@
-import { Button, Group, Text } from "@mantine/core";
+import { Button } from "./ui";
 
 type PaginationProps = {
   page: number;
@@ -9,16 +9,16 @@ type PaginationProps = {
 
 export function Pagination({ page, pageCount, onPrevious, onNext }: PaginationProps) {
   return (
-    <Group className="pagination" justify="flex-end" gap="sm" mt="md">
-      <Button variant="default" size="xs" type="button" onClick={onPrevious} disabled={page <= 1}>
+    <div className="pagination">
+      <Button variant="secondary" size="sm" type="button" onClick={onPrevious} disabled={page <= 1}>
         Previous
       </Button>
-      <Text c="dimmed" size="sm" fw={700}>
+      <span className="muted strong small">
         Page {page} of {pageCount}
-      </Text>
-      <Button variant="default" size="xs" type="button" onClick={onNext} disabled={page >= pageCount}>
+      </span>
+      <Button variant="secondary" size="sm" type="button" onClick={onNext} disabled={page >= pageCount}>
         Next
       </Button>
-    </Group>
+    </div>
   );
 }

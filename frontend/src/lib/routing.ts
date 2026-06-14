@@ -9,7 +9,7 @@ export function getRouteFromPath(pathname: string): Route {
     return "meals";
   }
 
-  if (pathname.startsWith("/favorites")) {
+  if (pathname.startsWith("/favourites") || pathname.startsWith("/favorites")) {
     return "favorites";
   }
 
@@ -25,5 +25,9 @@ export function getRouteFromPath(pathname: string): Route {
 }
 
 export function getPathForRoute(route: Route) {
-  return route === "home" ? "/" : `/${route}`;
+  if (route === "home") {
+    return "/";
+  }
+
+  return route === "favorites" ? "/favourites" : `/${route}`;
 }

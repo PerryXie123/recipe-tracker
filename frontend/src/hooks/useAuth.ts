@@ -30,11 +30,16 @@ export function useAuth() {
       return;
     }
 
+    const queryParams = {
+      prompt: "select_account",
+      ...(supabasePublishableKey ? { apikey: supabasePublishableKey } : {})
+    };
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: window.location.origin,
-        queryParams: supabasePublishableKey ? { apikey: supabasePublishableKey } : undefined
+        queryParams
       }
     });
   }

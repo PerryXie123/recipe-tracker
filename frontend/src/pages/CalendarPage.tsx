@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ActionIcon, Button, Group, Paper, SegmentedControl, Select, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 import { IconChevronLeft, IconChevronRight, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
+import { Button, IconButton, Panel, SegmentedControl, SelectInput } from "../components/ui";
 import { addDays, getMonday, mealSlots, toDateKey, type MealPlan, type MealSlot } from "../lib/planning";
 import type { Recipe } from "../types";
 
@@ -70,55 +70,45 @@ export function CalendarPage({
   return (
     <section className="page-stack">
       <section className="calendar-shell">
-        <Paper className="panel calendar-panel" withBorder>
+        <Panel className="calendar-panel">
           <div className="section-header">
             <div>
-              <Text className="eyebrow">{view === "today" ? "Today" : "Week starting Monday"}</Text>
-              <Title order={2}>
+              <p className="eyebrow">{view === "today" ? "Today" : "Week starting Monday"}</p>
+              <h2>
                 {view === "today" ? `${dayFormatter.format(selectedDate)}, ${dateFormatter.format(selectedDate)}` : weekRange}
-              </Title>
+              </h2>
             </div>
-            <Group gap={8}>
-              <SegmentedControl
-                value={view}
-                onChange={(value) => setView(value as "today" | "week")}
-                data={[
-                  { value: "today", label: "Today" },
-                  { value: "week", label: "Week" }
-                ]}
-              />
-            </Group>
+            <SegmentedControl
+              value={view}
+              onChange={(value) => setView(value as "today" | "week")}
+              options={[
+                { value: "today", label: "Today" },
+                { value: "week", label: "Week" }
+              ]}
+            />
           </div>
 
           {view === "today" ? (
             <div className="today-planner">
-              <Group gap={8}>
-                <ActionIcon
-                  variant="default"
-                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                  aria-label="Previous day"
-                >
+              <div className="inline-actions">
+                <IconButton label="Previous day" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>
                   <IconChevronLeft size={18} />
-                </ActionIcon>
-                <Button variant="default" size="xs" type="button" onClick={() => setSelectedDate(new Date())}>
+                </IconButton>
+                <Button variant="secondary" size="sm" type="button" onClick={() => setSelectedDate(new Date())}>
                   Today
                 </Button>
-                <ActionIcon
-                  variant="default"
-                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                  aria-label="Next day"
-                >
+                <IconButton label="Next day" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
                   <IconChevronRight size={18} />
-                </ActionIcon>
-              </Group>
+                </IconButton>
+              </div>
 
-              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md" mt="md">
+              <div className="slot-grid">
                 {mealSlots.map((slot) => {
                   const recipeIds = selectedDayPlan[slot.id] || [];
                   return (
                     <div className="calendar-slot-group today-slot" key={slot.id}>
-                      <Text c="dimmed" fw={900}>{slot.label}</Text>
-                      <Stack gap={8}>
+                      <span className="muted strong">{slot.label}</span>
+                      <div className="list-stack">
                         {recipeIds.map((recipeId, index) => {
                           const recipe = recipes.find((item) => item.id === recipeId);
                           if (!recipe) {
@@ -131,69 +121,66 @@ export function CalendarPage({
                                 <span>{recipe.name}</span>
                                 <small>{Math.round(recipe.calories)} cal</small>
                               </button>
-                              <ActionIcon
-                                size="sm"
+                              <IconButton
+                                label={`Remove ${recipe.name}`}
                                 variant="subtle"
-                                color="gray"
                                 onClick={() => removeRecipe(selectedDateKey, slot.id, index)}
-                                aria-label={`Remove ${recipe.name}`}
                               >
                                 <IconX size={14} />
-                              </ActionIcon>
+                              </IconButton>
                             </div>
                           );
                         })}
-                      </Stack>
-                      <Select
+                      </div>
+                      <SelectInput
                         className="calendar-add"
                         placeholder="Add meal"
-                        data={mealOptions}
-                        searchable
+                        options={mealOptions}
                         value={null}
                         onChange={(value) => addRecipe(selectedDateKey, slot.id, value)}
                       />
                     </div>
                   );
                 })}
-              </SimpleGrid>
+              </div>
             </div>
           ) : (
             <>
-              <Group gap={8} mb="md">
-                <ActionIcon variant="default" onClick={() => setWeekOffset(weekOffset - 1)} aria-label="Previous week">
+              <div className="inline-actions mb-16">
+                <IconButton label="Previous week" onClick={() => setWeekOffset(weekOffset - 1)}>
                   <IconChevronLeft size={18} />
-                </ActionIcon>
-                <Button variant="default" size="xs" type="button" onClick={() => setWeekOffset(0)}>
+                </IconButton>
+                <Button variant="secondary" size="sm" type="button" onClick={() => setWeekOffset(0)}>
                   This week
                 </Button>
-                <ActionIcon variant="default" onClick={() => setWeekOffset(weekOffset + 1)} aria-label="Next week">
+                <IconButton label="Next week" onClick={() => setWeekOffset(weekOffset + 1)}>
                   <IconChevronRight size={18} />
-                </ActionIcon>
-              </Group>
+                </IconButton>
+              </div>
 
-              <SimpleGrid cols={{ base: 1, xl: 7 }} spacing="sm">
+              <div className="week-grid">
                 {weekDays.map((date) => {
                   const dateKey = toDateKey(date);
                   const dayPlan = mealPlan[dateKey] || {};
                   const dayCalories = getDateCalories(dayPlan, recipes);
 
                   return (
-                    <Paper className="calendar-day overview" withBorder key={dateKey}>
-                      <Group justify="space-between" align="start" wrap="nowrap">
+                    <div className="calendar-day overview" key={dateKey}>
+                      <div className="spread">
                         <div>
-                          <Text fw={900}>{dayFormatter.format(date)}</Text>
-                          <Text c="dimmed" size="sm">{dateFormatter.format(date)}</Text>
+                          <strong>{dayFormatter.format(date)}</strong>
+                          <p className="muted small">{dateFormatter.format(date)}</p>
                         </div>
-                        <Text size="xs" fw={900}>{Math.round(dayCalories)} cal</Text>
-                      </Group>
+                        <span className="small strong">{Math.round(dayCalories)} cal</span>
+                      </div>
 
-                      <Stack gap={10} mt={14}>
+                      <div className="list-stack mt-16">
                         {mealSlots.map((slot) => {
                           const recipeIds = dayPlan[slot.id] || [];
                           return (
                             <div className="calendar-slot-group overview-slot" key={slot.id}>
-                              <Text size="xs" c="dimmed" fw={900}>{slot.label}</Text>
-                              {recipeIds.length === 0 ? <Text c="dimmed" size="xs">Empty</Text> : null}
+                              <span className="muted small strong">{slot.label}</span>
+                              {recipeIds.length === 0 ? <span className="muted small">Empty</span> : null}
                               {recipeIds.map((recipeId, index) => {
                                 const recipe = recipes.find((item) => item.id === recipeId);
                                 return recipe ? (
@@ -210,16 +197,16 @@ export function CalendarPage({
                             </div>
                           );
                         })}
-                      </Stack>
-                    </Paper>
+                      </div>
+                    </div>
                   );
                 })}
-              </SimpleGrid>
+              </div>
             </>
           )}
-        </Paper>
+        </Panel>
 
-        <Stack gap={20}>
+        <div className="right-panel-stack">
           <CalorieTargetCard
             calories={view === "today" ? selectedDayCalories : dailyAverage}
             target={currentTdeeTarget}
@@ -227,14 +214,14 @@ export function CalendarPage({
             subtitle={view === "today" ? "Planned calories for this date." : "Average planned calories across this week."}
           />
 
-          <Paper className="panel" withBorder>
+          <Panel>
             <div className="section-header">
               <div>
-                <Text className="eyebrow">Planning list</Text>
-                <Title order={2}>Saved meals</Title>
+                <p className="eyebrow">Planning list</p>
+                <h2>Saved meals</h2>
               </div>
             </div>
-            <Stack gap={8}>
+            <div className="list-stack">
               {recipes
                 .filter((recipe) => favoriteRecipeIds.includes(recipe.id))
                 .concat(recipes.filter((recipe) => !favoriteRecipeIds.includes(recipe.id)))
@@ -246,14 +233,14 @@ export function CalendarPage({
                   </button>
                 ))}
               {recipes.length === 0 ? (
-                <Paper className="empty-state compact" withBorder>
-                  <Text fw={700}>No meals to plan yet</Text>
-                  <Text c="dimmed" size="sm">Create meals first, then use them in your calendar.</Text>
-                </Paper>
+                <div className="empty-state compact">
+                  <strong>No meals to plan yet</strong>
+                  <p className="muted small">Create meals first, then use them in your calendar.</p>
+                </div>
               ) : null}
-            </Stack>
-          </Paper>
-        </Stack>
+            </div>
+          </Panel>
+        </div>
       </section>
     </section>
   );
