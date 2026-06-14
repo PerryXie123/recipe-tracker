@@ -104,14 +104,6 @@ export function IngredientsPage({
 
   return (
     <section className="page-stack" onPointerDown={handlePagePointerDown}>
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Ingredients</p>
-          <h1>Ingredients</h1>
-        </div>
-        <Badge>{filteredFoods.length} matches</Badge>
-      </header>
-
       <section className="content-layout">
         <Panel className="ingredients-panel">
           <div className="toolbar">
@@ -123,6 +115,7 @@ export function IngredientsPage({
               placeholder="Search by name"
             />
             <div className="inline-actions">
+              <Badge>{filteredFoods.length} matches</Badge>
               {isConfirmingBulkDelete ? (
                 <>
                   <Button variant="danger" type="button" onClick={handleBulkDelete}>

@@ -110,24 +110,26 @@ export function FoodForm({
         />
       </div>
 
-      {isPerUnit ? (
-        <div className="form-grid">
-          <TextInput
-            label="Unit type"
-            value={food.unit_label}
-            onChange={(unit_label) => onChange({ ...food, unit_label })}
-            placeholder="cup, bar, slice"
-            required
-          />
-          <NumericInput
-            label="Unit weight (g)"
-            value={food.unit_weight_g}
-            onChange={(unit_weight_g) => onChange({ ...food, unit_weight_g })}
-            min={0}
-            step={0.1}
-          />
-        </div>
-      ) : null}
+      <div className="unit-fields-slot">
+        {isPerUnit ? (
+          <div className="form-grid unit-fields">
+            <TextInput
+              label="Unit type"
+              value={food.unit_label}
+              onChange={(unit_label) => onChange({ ...food, unit_label })}
+              placeholder="cup, bar, slice"
+              required
+            />
+            <NumericInput
+              label="Unit weight (g)"
+              value={food.unit_weight_g}
+              onChange={(unit_weight_g) => onChange({ ...food, unit_weight_g })}
+              min={0}
+              step={0.1}
+            />
+          </div>
+        ) : null}
+      </div>
 
       <div className="button-stack">
         <Button type="submit" loading={isSaving}>

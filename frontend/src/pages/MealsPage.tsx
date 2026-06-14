@@ -128,13 +128,6 @@ export function MealsPage({
 
   return (
     <section className="page-stack" onPointerDown={handlePagePointerDown}>
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Meals</p>
-          <h1>Meals</h1>
-        </div>
-      </header>
-
       <section className="content-layout meals-layout">
         <Panel>
           <div className="toolbar">

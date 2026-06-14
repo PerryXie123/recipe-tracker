@@ -56,14 +56,6 @@ export function FavoritesPage({
 
   return (
     <section className="page-stack">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Favourites</p>
-          <h1>Favourites</h1>
-        </div>
-        <Badge>{filteredRecipes.length} saved</Badge>
-      </header>
-
       <Panel>
         <div className="toolbar">
           <TextInput
@@ -73,6 +65,7 @@ export function FavoritesPage({
             onChange={setSearch}
             placeholder="Search name, category, or ingredient"
           />
+          <Badge>{filteredRecipes.length} saved</Badge>
         </div>
 
         {filteredRecipes.length === 0 ? (

@@ -291,6 +291,25 @@ th {
   justify-content: flex-start;
 }
 
+.toolbar {
+  min-height: 48px;
+}
+
+.toolbar .inline-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.toolbar > .badge {
+  margin-left: auto;
+}
+
+.search-field {
+  flex: 1 1 260px;
+  max-width: 440px;
+}
+
 .profile-chip {
   display: grid;
   grid-template-columns: 42px minmax(0, 190px);
@@ -733,6 +752,8 @@ th {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-sizing: border-box;
+  min-width: 132px;
   min-height: 42px;
   padding: 0 18px;
   color: #ffffff;
@@ -743,6 +764,7 @@ th {
 }
 
 .button.sm {
+  min-width: 84px;
   min-height: 32px;
   padding: 0 14px;
   font-size: 11px;
@@ -799,6 +821,8 @@ th {
 .badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   min-height: 22px;
   padding: 0 8px;
   color: var(--green);
@@ -825,6 +849,7 @@ th {
 
 .field input,
 .select-trigger {
+  box-sizing: border-box;
   width: 100%;
   min-height: 42px;
   padding: 0 13px;
@@ -875,6 +900,7 @@ th {
   grid-auto-flow: column;
   gap: 4px;
   width: max-content;
+  min-height: 40px;
   padding: 4px;
   background: var(--card-soft);
   border-radius: 999px;
@@ -886,8 +912,11 @@ th {
   color: var(--muted);
   background: transparent;
   border: 0;
+  border-radius: 999px;
+  box-sizing: border-box;
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .segment[aria-pressed="true"] {
@@ -1161,6 +1190,14 @@ th {
 .unit-section .segmented-control {
   width: 100%;
   grid-auto-columns: minmax(0, 1fr);
+}
+
+.unit-fields-slot {
+  min-height: 66px;
+}
+
+.unit-fields {
+  align-items: end;
 }
 
 .form-message,
