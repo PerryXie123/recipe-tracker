@@ -77,7 +77,15 @@ export function App() {
 
   return (
     <>
-      {!auth.userEmail ? (
+      {auth.isAuthLoading ? (
+        <div className="auth-loading-screen">
+          <div className="brand">
+            <span className="brand-mark">R</span>
+            <strong>Recipe Tracker</strong>
+          </div>
+          <p className="muted">Restoring your session...</p>
+        </div>
+      ) : !auth.userEmail ? (
         <LandingPage
           authConfigured={auth.authConfigured}
           authConfigMessage={auth.authConfigMessage}

@@ -24,7 +24,9 @@ export const isSupabaseAuthConfigured = Boolean(supabaseUrl && hasBrowserSafeKey
 export const supabase = isSupabaseAuthConfigured
   ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
       auth: {
-        detectSessionInUrl: false
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        persistSession: true
       }
     })
   : null;

@@ -19,12 +19,16 @@ export function useAuth() {
       return;
     }
     const authClient = supabase;
+    let isMounted = true;
 
     async function initialiseSession() {
       const hashSession = getSessionFromHash();
       if (hashSession) {
         setAuthState(getAuthStateFromAccessToken(hashSession.access_token));
         const { data, error } = await authClient.auth.setSession(hashSession);
+        if (!isMounted) {
+          return;
+        }
         if (error) {
           console.error("Could not restore Supabase session from redirect URL", error);
         }
@@ -38,6 +42,9 @@ export function useAuth() {
       }
 
       const { data } = await authClient.auth.getSession();
+      if (!isMounted) {
+        return;
+      }
       setSession(data.session);
       setAuthState(getAuthStateFromSession(data.session));
       setIsAuthLoading(false);
@@ -46,6 +53,9 @@ export function useAuth() {
     void initialiseSession();
 
     const { data } = authClient.auth.onAuthStateChange((_event, nextSession) => {
+      if (!isMounted) {
+        return;
+      }
       setSession(nextSession);
       setAuthState((currentAuthState) =>
         nextSession ? getAuthStateFromSession(nextSession) : currentAuthState.accessToken ? currentAuthState : { email: null, name: null }
@@ -53,7 +63,10 @@ export function useAuth() {
       setIsAuthLoading(false);
     });
 
-    return () => data.subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   async function signInWithGoogle() {
