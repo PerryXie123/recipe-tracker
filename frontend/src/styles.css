@@ -261,7 +261,7 @@ th {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
   min-width: 0;
-  padding: clamp(20px, 1.65vw, 28px);
+  padding: clamp(22px, 1.9vw, 34px);
 }
 
 .topbar {
@@ -334,9 +334,9 @@ th {
 .page-title-row {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: 24px;
   align-items: start;
-  padding: 0 0 20px;
+  padding: 2px 0 26px;
 }
 
 .page-title-row p {
@@ -367,12 +367,12 @@ th {
 .right-panel-stack,
 .landing-copy-block {
   display: grid;
-  gap: 14px;
+  gap: 18px;
 }
 
 .panel-surface {
   min-width: 0;
-  padding: clamp(18px, 1.2vw, 22px);
+  padding: clamp(20px, 1.35vw, 26px);
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -1032,7 +1032,7 @@ th {
 .calendar-shell,
 .tdee-layout {
   display: grid;
-  gap: 12px;
+  gap: 18px;
 }
 
 .content-layout {
@@ -1040,7 +1040,9 @@ th {
 }
 
 .meals-layout {
-  grid-template-columns: minmax(0, 1fr) minmax(420px, 500px);
+  grid-template-columns: minmax(0, 1fr) minmax(430px, 520px);
+  align-items: start;
+  gap: 24px;
 }
 
 .dashboard-grid,
@@ -1172,7 +1174,7 @@ th {
 .recipe-list,
 .collab-list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .form-grid,
@@ -1220,17 +1222,23 @@ th {
 
 .meal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
 }
 
 .meal-card {
   display: grid;
-  gap: 12px;
-  min-height: 210px;
+  gap: 16px;
+  min-height: 238px;
+  padding: clamp(20px, 1.3vw, 24px);
   color: var(--text);
   text-align: left;
   cursor: pointer;
+}
+
+.meals-panel {
+  display: grid;
+  gap: 20px;
 }
 
 .meal-card:hover,
@@ -1251,7 +1259,7 @@ th {
 .card-portion,
 .autocomplete-field {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .builder-row {
@@ -1449,6 +1457,16 @@ th {
   }
 }
 
+@media (max-width: 1320px) {
+  .meals-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .app-shell {
     padding: 0;
@@ -1461,7 +1479,7 @@ th {
   }
 
   .app-main {
-    padding: 14px;
+    padding: 16px;
   }
 
   .topbar,
@@ -1514,5 +1532,14 @@ th {
   .profile-chip {
     grid-template-columns: 42px minmax(0, 1fr);
     width: 100%;
+  }
+
+  .panel-surface,
+  .meal-card {
+    padding: 16px;
+  }
+
+  .meal-card {
+    min-height: auto;
   }
 }

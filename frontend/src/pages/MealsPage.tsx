@@ -129,7 +129,7 @@ export function MealsPage({
   return (
     <section className="page-stack" onPointerDown={handlePagePointerDown}>
       <section className="content-layout meals-layout">
-        <Panel>
+        <Panel className="meals-panel">
           <div className="toolbar">
             <TextInput
               className="search-field"
