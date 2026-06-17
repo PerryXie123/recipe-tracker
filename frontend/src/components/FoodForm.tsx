@@ -29,15 +29,10 @@ export function FoodForm({
   onCancel,
   onDelete
 }: FoodFormProps) {
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [unitDraft, setUnitDraft] = useState({ label: "serving", weight: 0 });
   const isPerUnit = food.unit_label !== "100g";
   const visibleUnitLabel = isPerUnit ? food.unit_label : unitDraft.label;
   const visibleUnitWeight = isPerUnit ? food.unit_weight_g : unitDraft.weight;
-
-  useEffect(() => {
-    setIsConfirmingDelete(false);
-  }, [isEditing, food.name]);
 
   useEffect(() => {
     if (isPerUnit) {
@@ -57,11 +52,6 @@ export function FoodForm({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit();
-  }
-
-  function handleConfirmDelete() {
-    setIsConfirmingDelete(false);
-    onDelete?.();
   }
 
   function setUnitMode(mode: string) {
@@ -171,20 +161,9 @@ export function FoodForm({
           </Button>
         ) : null}
         {isEditing && onDelete ? (
-          isConfirmingDelete ? (
-            <div className="split-actions">
-              <Button variant="danger" type="button" onClick={handleConfirmDelete}>
-                Confirm
-              </Button>
-              <Button variant="secondary" type="button" onClick={() => setIsConfirmingDelete(false)}>
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <Button variant="danger" type="button" onClick={() => setIsConfirmingDelete(true)}>
-              Delete ingredient
-            </Button>
-          )
+          <Button variant="danger" type="button" onClick={onDelete}>
+            Delete ingredient
+          </Button>
         ) : null}
       </div>
       <p className="form-message" role="status">

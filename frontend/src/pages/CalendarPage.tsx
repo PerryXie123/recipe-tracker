@@ -1,3 +1,4 @@
+import type { TouchEvent } from "react";
 import { useState } from "react";
 import { IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
@@ -37,6 +38,7 @@ export function CalendarPage({
   const [view, setView] = useState<"today" | "week">("today");
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const selectedDateKey = toDateKey(selectedDate);
   const selectedDayPlan = mealPlan[selectedDateKey] || {};
   const weekStart = addDays(getMonday(new Date()), weekOffset * 7);
@@ -98,6 +100,34 @@ export function CalendarPage({
     });
   }
 
+  function handlePlannerTouchStart(event: TouchEvent<HTMLElement>) {
+    if (event.touches.length !== 1) {
+      return;
+    }
+
+    if (event.target instanceof Element && event.target.closest("button, input, [role='button']")) {
+      setTouchStartX(null);
+      return;
+    }
+
+    setTouchStartX(event.touches[0].clientX);
+  }
+
+  function handlePlannerTouchEnd(event: TouchEvent<HTMLElement>) {
+    if (touchStartX === null) {
+      return;
+    }
+
+    const deltaX = event.changedTouches[0].clientX - touchStartX;
+    setTouchStartX(null);
+
+    if (Math.abs(deltaX) < 60) {
+      return;
+    }
+
+    setSelectedDate(addDays(selectedDate, deltaX > 0 ? -1 : 1));
+  }
+
   return (
     <section className="page-stack">
       <section className="calendar-shell">
@@ -120,7 +150,11 @@ export function CalendarPage({
           </div>
 
           {view === "today" ? (
-            <div className="today-planner">
+            <div
+              className="today-planner"
+              onTouchStart={handlePlannerTouchStart}
+              onTouchEnd={handlePlannerTouchEnd}
+            >
               <div className="inline-actions">
                 <IconButton label="Previous day" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>
                   <IconChevronLeft size={18} />

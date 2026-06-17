@@ -5,10 +5,10 @@
   --sidebar-bg: #fbfbf8;
   --card: #ffffff;
   --card-soft: #f4f6f1;
-  --green: #0e7148;
-  --green-dark: #075334;
-  --green-soft: #e6f3eb;
-  --mint: #63bd93;
+  --green: #c72d74;
+  --green-dark: #94164f;
+  --green-soft: #fde7f1;
+  --mint: #f084b6;
   --yellow: #f3d879;
   --orange: #f3a15b;
   --red: #e4554f;
@@ -26,10 +26,10 @@
   --sidebar-bg: #141815;
   --card: #1f2420;
   --card-soft: #252b27;
-  --green: #7bdca8;
-  --green-dark: #4bb77f;
-  --green-soft: #1f3b2d;
-  --mint: #6ed09d;
+  --green: #ff8abd;
+  --green-dark: #db4f91;
+  --green-soft: #462136;
+  --mint: #f7a7ca;
   --yellow: #e9c961;
   --orange: #de8e50;
   --red: #f1736d;
@@ -266,10 +266,15 @@ th {
 
 .topbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   min-height: 48px;
   padding: 0 0 16px;
+}
+
+.menu-toggle,
+.nav-backdrop {
+  display: none;
 }
 
 .topbar-actions,
@@ -645,8 +650,7 @@ th {
   content: "";
 }
 
-.progress-arc strong,
-.progress-arc span {
+.progress-arc strong {
   position: relative;
   z-index: 1;
 }
@@ -656,13 +660,6 @@ th {
   justify-self: center;
   font-size: 42px;
   line-height: 1;
-}
-
-.progress-arc span {
-  position: absolute;
-  bottom: 28px;
-  color: var(--green);
-  font-size: 11px;
 }
 
 .legend-row {
@@ -786,10 +783,10 @@ th {
 }
 
 .button.sm {
-  min-width: 84px;
-  min-height: 32px;
-  padding: 0 14px;
-  font-size: 11px;
+  min-width: 112px;
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 13px;
 }
 
 .button.secondary,
@@ -855,6 +852,63 @@ th {
   font-weight: 800;
 }
 
+.modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(17, 20, 18, 0.42);
+}
+
+.confirm-modal {
+  display: grid;
+  gap: 18px;
+  width: min(480px, 100%);
+  padding: 24px;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.confirm-modal-body {
+  display: grid;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.confirm-modal-body strong {
+  color: var(--text);
+}
+
+.confirm-modal-list {
+  display: grid;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px;
+  background: var(--card-soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.confirm-modal-list span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.confirm-modal-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .field,
 .select-field {
   display: grid;
@@ -906,6 +960,12 @@ th {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+}
+
+.select-trigger svg {
+  flex: 0 0 auto;
+  color: var(--muted);
 }
 
 .select-popover {
@@ -931,23 +991,27 @@ th {
 .segmented-control {
   display: inline-grid;
   grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 4px;
-  width: max-content;
-  min-height: 40px;
+  width: 100%;
+  min-height: 42px;
   padding: 4px;
   background: var(--card-soft);
   border-radius: 999px;
 }
 
 .segment {
-  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
   padding: 0 14px;
   color: var(--muted);
   background: transparent;
   border: 0;
   border-radius: 999px;
   box-sizing: border-box;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1312,39 +1376,24 @@ th {
 
 .calorie-target-card {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 16px;
-  align-items: center;
+  gap: 10px;
 }
 
-.calorie-ring {
-  display: grid;
-  place-items: center;
-  width: 102px;
-  height: 102px;
-  background:
-    radial-gradient(circle at center, var(--card) 58%, transparent 59%),
-    conic-gradient(var(--green) var(--calorie-progress), var(--line) 0);
-  border-radius: 50%;
+.calorie-progress-bar {
+  height: 12px;
+  margin-top: 12px;
+  overflow: hidden;
+  background: var(--card-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
 }
 
-.calorie-ring strong,
-.calorie-ring span {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.calorie-ring strong {
-  margin-bottom: 14px;
-  font-size: 23px;
-}
-
-.calorie-ring span {
-  margin-top: 32px;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
+.calorie-progress-bar span {
+  display: block;
+  width: var(--calorie-progress);
+  height: 100%;
+  background: var(--green);
+  border-radius: inherit;
 }
 
 .ingredients-panel {
@@ -1556,10 +1605,10 @@ th {
 
 .calendar-meal-pill {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(120px, 150px) 38px;
+  grid-template-columns: minmax(0, 1fr) minmax(108px, 136px) 42px;
   gap: 8px;
-  align-items: end;
-  padding: 8px;
+  align-items: center;
+  padding: 6px 8px;
   background: var(--green-soft);
   border-radius: 14px;
 }
@@ -1577,8 +1626,13 @@ th {
 .calendar-meal-pill button {
   display: grid;
   gap: 2px;
-  min-height: 58px;
-  padding: 10px;
+  min-height: 46px;
+  padding: 6px 8px;
+}
+
+.calendar-meal-pill .icon-button-control {
+  width: 38px;
+  height: 38px;
 }
 
 .calendar-portion-input label {
@@ -1726,7 +1780,42 @@ th {
   }
 
   .sidebar {
-    display: none;
+    position: fixed;
+    z-index: 80;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    width: min(318px, 86vw);
+    transform: translateX(-104%);
+    border-right: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    transition: transform 180ms ease;
+  }
+
+  .nav-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .nav-backdrop {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: block;
+    background: rgba(17, 20, 18, 0.42);
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+
+  .nav-open .nav-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .menu-toggle {
+    display: grid;
   }
 
   .dashboard-mosaic {
@@ -1766,7 +1855,17 @@ th {
   }
 
   .app-main {
-    padding: 16px;
+    padding: 14px;
+  }
+
+  .topbar {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    margin: -14px -14px 0;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--frame-bg) 92%, transparent);
+    backdrop-filter: blur(14px);
   }
 
   .topbar,
@@ -1810,10 +1909,11 @@ th {
   }
 
   .calendar-meal-pill {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 42px;
   }
 
   .calendar-portion-input {
+    grid-column: 1 / -1;
     width: 100%;
   }
 
@@ -1835,14 +1935,38 @@ th {
     align-items: stretch;
   }
 
+  .page-title-row {
+    gap: 14px;
+    padding-bottom: 18px;
+  }
+
   .topbar-actions,
   .inline-actions {
     flex-wrap: wrap;
   }
 
+  .topbar-actions {
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .page-title-row .inline-actions,
+  .toolbar .inline-actions {
+    width: 100%;
+  }
+
+  .page-title-row .button,
+  .toolbar .button,
+  .calendar-add-option,
+  .planner-meal,
+  .mini-row,
+  .calendar-readonly-meal {
+    width: 100%;
+  }
+
   .profile-chip {
     grid-template-columns: 42px minmax(0, 1fr);
-    width: 100%;
+    max-width: min(210px, 52vw);
   }
 
   .panel-surface,
@@ -1852,5 +1976,28 @@ th {
 
   .meal-card {
     min-height: auto;
+  }
+
+  .search-field {
+    max-width: none;
+  }
+
+  .calendar-add-results {
+    max-height: 260px;
+    overflow: auto;
+  }
+
+  .week-grid {
+    grid-template-columns: repeat(7, minmax(210px, 1fr));
+  }
+
+  .modal-backdrop {
+    align-items: end;
+    padding: 10px;
+  }
+
+  .confirm-modal {
+    width: 100%;
+    border-radius: 18px 18px 14px 14px;
   }
 }

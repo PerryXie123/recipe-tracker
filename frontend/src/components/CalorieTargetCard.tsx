@@ -14,17 +14,17 @@ export function CalorieTargetCard({ calories, target, title, subtitle }: Calorie
 
   return (
     <div className="panel-surface calorie-target-card">
-      <div
-        className="calorie-ring"
-        style={{ "--calorie-progress": `${Math.min(percent, 100)}%` } as CSSProperties}
-      >
-        <strong>{target ? `${percent}%` : "-"}</strong>
-        <span>target</span>
-      </div>
       <div>
         <p className="eyebrow">{title}</p>
         <h2>{formatNumber(calories)} cal</h2>
         <p className="muted small">{subtitle}</p>
+        <div
+          className="calorie-progress-bar"
+          style={{ "--calorie-progress": `${Math.min(percent, 100)}%` } as CSSProperties}
+          aria-label={target ? `${percent}% of calorie target` : "No calorie target set"}
+        >
+          <span />
+        </div>
         <p className="strong mt-8">
           {target ? `${formatNumber(Math.abs(remaining || 0))} cal ${remaining && remaining < 0 ? "over" : "remaining"}` : "Set a TDEE target"}
         </p>

@@ -10,7 +10,7 @@ type ApiServices = {
     getFoods: (auth: AuthContext) => Promise<unknown>;
     createFood: (payload: NewFoodPayload, auth: AuthContext) => Promise<unknown>;
     updateFood: (id: string, payload: NewFoodPayload, auth: AuthContext) => Promise<unknown>;
-    deleteFood: (id: string, auth: AuthContext) => Promise<unknown>;
+    deleteFood: (id: string, auth: AuthContext, options?: { removeReferences?: boolean }) => Promise<unknown>;
   };
   recipes: {
     getRecipes: (auth: AuthContext) => Promise<unknown>;
@@ -46,7 +46,13 @@ export function createApiHandler(services: ApiServices) {
       }
 
       if (foodId && request.method === "DELETE") {
-        return sendJson(response, 200, await services.foods.deleteFood(foodId, auth));
+        return sendJson(
+          response,
+          200,
+          await services.foods.deleteFood(foodId, auth, {
+            removeReferences: url.searchParams.get("removeReferences") === "true"
+          })
+        );
       }
 
       if (request.method === "GET" && url.pathname === "/api/recipes") {

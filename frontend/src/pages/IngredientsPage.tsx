@@ -3,14 +3,15 @@ import { useEffect, useMemo, useState } from "react";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
-import { Badge, Button, Panel, TextInput } from "../components/ui";
+import { Badge, Button, ConfirmModal, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
-import type { Food, NewFood } from "../types";
+import type { Food, NewFood, Recipe } from "../types";
 
 const INGREDIENTS_PER_PAGE = 14;
 
 type IngredientsPageProps = {
   foods: Food[];
+  recipes: Recipe[];
   foodForm: NewFood;
   isEditing: boolean;
   isSaving: boolean;
@@ -22,12 +23,14 @@ type IngredientsPageProps = {
   onCancel: () => void;
   onEdit: (food: Food) => void;
   onDelete: (food: Food) => void;
+  onDeleteWithReferences: (food: Food) => void;
   onBulkDelete: (foodIds: string[]) => void;
   editingFoodId: string | null;
 };
 
 export function IngredientsPage({
   foods,
+  recipes,
   foodForm,
   isEditing,
   isSaving,
@@ -39,6 +42,7 @@ export function IngredientsPage({
   onCancel,
   onEdit,
   onDelete,
+  onDeleteWithReferences,
   onBulkDelete,
   editingFoodId
 }: IngredientsPageProps) {
@@ -46,6 +50,7 @@ export function IngredientsPage({
   const [page, setPage] = useState(1);
   const [checkedFoodIds, setCheckedFoodIds] = useState<string[]>([]);
   const [isConfirmingBulkDelete, setIsConfirmingBulkDelete] = useState(false);
+  const [foodPendingDelete, setFoodPendingDelete] = useState<Food | null>(null);
 
   useEffect(() => {
     setPage(1);
@@ -88,6 +93,25 @@ export function IngredientsPage({
     onBulkDelete(checkedFoodIds);
     setCheckedFoodIds([]);
     setIsConfirmingBulkDelete(false);
+  }
+
+  function requestDeleteFood(food: Food) {
+    const affectedRecipes = getRecipesUsingFood(food, recipes);
+    if (affectedRecipes.length === 0) {
+      onDelete(food);
+      return;
+    }
+
+    setFoodPendingDelete(food);
+  }
+
+  function confirmDeleteFoodWithReferences() {
+    if (!foodPendingDelete) {
+      return;
+    }
+
+    onDeleteWithReferences(foodPendingDelete);
+    setFoodPendingDelete(null);
   }
 
   function handlePagePointerDown(event: PointerEvent<HTMLElement>) {
@@ -164,9 +188,34 @@ export function IngredientsPage({
           onKjChange={onKjChange}
           onSubmit={onSubmit}
           onCancel={onCancel}
-          onDelete={editingFood ? () => onDelete(editingFood) : undefined}
+            onDelete={editingFood ? () => requestDeleteFood(editingFood) : undefined}
         />
       </section>
+      {foodPendingDelete ? (
+        <ConfirmModal
+          title={`Delete ${foodPendingDelete.name}?`}
+          confirmLabel="Delete ingredient"
+          onCancel={() => setFoodPendingDelete(null)}
+          onConfirm={confirmDeleteFoodWithReferences}
+          body={
+            <>
+              <p>
+                This ingredient is used in these meals. Deleting it will also remove it from those meals and keep the
+                rest of each meal unchanged.
+              </p>
+              <div className="confirm-modal-list">
+                {getRecipesUsingFood(foodPendingDelete, recipes).map((recipe) => (
+                  <span key={recipe.id}>{recipe.name}</span>
+                ))}
+              </div>
+            </>
+          }
+        />
+      ) : null}
     </section>
   );
+}
+
+function getRecipesUsingFood(food: Food, recipes: Recipe[]) {
+  return recipes.filter((recipe) => recipe.ingredients.some((ingredient) => ingredient.food_id === food.id));
 }

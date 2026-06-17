@@ -159,7 +159,6 @@ export function HomePage({
           <h3>Nutrition Progress</h3>
           <div className="progress-arc" style={{ "--progress": `${targetProgress}%` } as CSSProperties}>
             <strong>{targetProgress}%</strong>
-            <span>Target Met</span>
           </div>
           <div className="legend-row">
             <span><i className="legend completed" /> Planned</span>

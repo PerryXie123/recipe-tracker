@@ -192,6 +192,20 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     }
   }
 
+  async function removeFoodAndRecipeReferences(food: Food) {
+    setMessage("Deleting ingredient and updating meals...");
+    try {
+      await deleteFood(food.id, { removeReferences: true });
+      if (editingFoodId === food.id) {
+        resetFoodForm();
+      }
+      await refresh();
+      setMessage("Ingredient deleted and removed from meals.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not delete ingredient from meals.");
+    }
+  }
+
   function resetFoodForm() {
     setEditingFoodId(null);
     setFoodForm(initialFood);
@@ -253,10 +267,6 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
 
   async function removeRecipes(recipeIds: string[]) {
     if (recipeIds.length === 0) {
-      return;
-    }
-
-    if (!window.confirm(`Delete ${recipeIds.length} selected meal${recipeIds.length === 1 ? "" : "s"}?`)) {
       return;
     }
 
@@ -396,6 +406,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     editFood,
     removeFood,
     removeFoods,
+    removeFoodAndRecipeReferences,
     resetFoodForm,
     updateFoodCalories,
     updateFoodKj,

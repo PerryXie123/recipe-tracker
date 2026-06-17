@@ -93,8 +93,8 @@ export function App() {
       {auth.isAuthLoading ? (
         <div className="auth-loading-screen">
           <div className="brand">
-            <span className="brand-mark">R</span>
-            <strong>Recipe Tracker</strong>
+            <span className="brand-mark">P</span>
+            <strong>Plateful</strong>
           </div>
           <p className="muted">Restoring your session...</p>
         </div>
@@ -139,6 +139,7 @@ export function App() {
         {route === "ingredients" ? (
           <IngredientsPage
             foods={tracker.foods}
+            recipes={tracker.recipes}
             foodForm={tracker.foodForm}
             isEditing={Boolean(tracker.editingFoodId)}
             editingFoodId={tracker.editingFoodId}
@@ -151,6 +152,7 @@ export function App() {
             onCancel={tracker.resetFoodForm}
             onEdit={tracker.editFood}
             onDelete={tracker.removeFood}
+            onDeleteWithReferences={tracker.removeFoodAndRecipeReferences}
             onBulkDelete={tracker.removeFoods}
           />
         ) : null}

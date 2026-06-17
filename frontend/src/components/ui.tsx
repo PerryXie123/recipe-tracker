@@ -1,4 +1,5 @@
 import type { ElementType, MouseEvent, ReactNode } from "react";
+import { IconChevronDown } from "@tabler/icons-react";
 import {
   Button as AriaButton,
   Checkbox as AriaCheckbox,
@@ -156,7 +157,7 @@ export function SelectInput({ label, value, options, className = "", placeholder
       {label ? <Label>{label}</Label> : null}
       <AriaButton className="select-trigger">
         <SelectValue>{({ selectedText }) => selectedText || placeholder}</SelectValue>
-        <span aria-hidden="true">v</span>
+        <IconChevronDown aria-hidden="true" size={16} strokeWidth={2.3} />
       </AriaButton>
       <Popover className="select-popover">
         <ListBox>
@@ -225,4 +226,50 @@ export function Panel({ children, className = "", as: Component = "div", ...prop
 
 export function Badge({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <span className={`badge ${className}`.trim()}>{children}</span>;
+}
+
+export function ConfirmModal({
+  title,
+  body,
+  confirmLabel,
+  cancelLabel = "Cancel",
+  tone = "danger",
+  disabled = false,
+  onConfirm,
+  onCancel
+}: {
+  title: string;
+  body: ReactNode;
+  confirmLabel: string;
+  cancelLabel?: string;
+  tone?: "primary" | "danger";
+  disabled?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={onCancel}>
+      <section
+        aria-modal="true"
+        className="confirm-modal"
+        role="dialog"
+        aria-labelledby="confirm-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div>
+          <p className="eyebrow">Confirm</p>
+          <h2 id="confirm-modal-title">{title}</h2>
+        </div>
+        <div className="confirm-modal-body">{body}</div>
+        <div className="confirm-modal-actions">
+          <Button variant="secondary" type="button" onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+          <Button variant={tone === "danger" ? "danger" : "primary"} type="button" disabled={disabled} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
 }

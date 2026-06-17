@@ -1,11 +1,13 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
   IconCalculator,
   IconCalendarWeek,
   IconChartPie,
   IconHome,
   IconLogout,
+  IconMenu2,
   IconMoon,
+  IconX,
   IconSoup,
   IconStar,
   IconSun,
@@ -85,16 +87,23 @@ export function Layout({
   children
 }: LayoutProps) {
   const initials = (userName || userEmail || "R").slice(0, 1).toUpperCase();
+  const [isNavOpen, setIsNavOpen] = useState(false);
   const pageTitle =
     route === "home" ? `${getTimeGreeting()}, ${getFirstName(userName, userEmail)}` : routeTitles[route].title;
 
+  function handleNavigate(nextRoute: Route) {
+    onNavigate(nextRoute);
+    setIsNavOpen(false);
+  }
+
   return (
-    <div className="app-shell">
+    <div className={isNavOpen ? "app-shell nav-open" : "app-shell"}>
       <div className="app-frame">
-        <aside className="sidebar" aria-label="Recipe Tracker navigation">
-          <button className="brand sidebar-brand" type="button" onClick={() => onNavigate("home")}>
-            <span className="brand-mark">R</span>
-            <strong>Recipe Tracker</strong>
+        <button className="nav-backdrop" type="button" aria-label="Close menu" onClick={() => setIsNavOpen(false)} />
+        <aside className="sidebar" aria-label="Plateful navigation">
+          <button className="brand sidebar-brand" type="button" onClick={() => handleNavigate("home")}>
+            <span className="brand-mark">P</span>
+            <strong>Plateful</strong>
           </button>
 
           <div className="sidebar-section">
@@ -104,7 +113,7 @@ export function Layout({
                 <button
                   className={route === item.route ? "nav-item active" : "nav-item"}
                   type="button"
-                  onClick={() => onNavigate(item.route)}
+                  onClick={() => handleNavigate(item.route)}
                   key={item.route}
                 >
                   <item.icon size={18} />
@@ -125,6 +134,14 @@ export function Layout({
 
         <div className="app-main">
           <header className="topbar">
+            <IconButton
+              className="menu-toggle"
+              label={isNavOpen ? "Close menu" : "Open menu"}
+              pressed={isNavOpen}
+              onClick={() => setIsNavOpen(!isNavOpen)}
+            >
+              {isNavOpen ? <IconX size={18} /> : <IconMenu2 size={18} />}
+            </IconButton>
             <div className="topbar-actions">
               <IconButton
                 label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -137,7 +154,7 @@ export function Layout({
                 <div className="profile-chip">
                   <span className="avatar">{initials}</span>
                   <span>
-                    <strong>{userName || "Recipe Tracker"}</strong>
+                    <strong>{userName || "Plateful"}</strong>
                     <small>{userEmail}</small>
                   </span>
                 </div>
@@ -153,10 +170,6 @@ export function Layout({
             <div>
               <h1>{pageTitle}</h1>
               <p className="muted">{routeTitles[route].description}</p>
-            </div>
-            <div className="inline-actions">
-              <Button onClick={() => onNavigate("meals")}>Add Meal</Button>
-              <Button variant="secondary" onClick={() => onNavigate("ingredients")}>Add Ingredient</Button>
             </div>
           </div>
 

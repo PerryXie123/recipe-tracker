@@ -51,7 +51,6 @@ export function RecipeForm({
   onDelete
 }: RecipeFormProps) {
   const [activeIngredientIndex, setActiveIngredientIndex] = useState<number | null>(null);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const autocompleteRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -65,10 +64,6 @@ export function RecipeForm({
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
-  useEffect(() => {
-    setIsConfirmingDelete(false);
-  }, [isEditing, recipe.name]);
-
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setActiveIngredientIndex(null);
@@ -78,11 +73,6 @@ export function RecipeForm({
   function handleChooseIngredient(index: number, food: Food) {
     onChooseIngredient(index, food);
     setActiveIngredientIndex(null);
-  }
-
-  function handleConfirmDelete() {
-    setIsConfirmingDelete(false);
-    onDelete?.();
   }
 
   return (
@@ -197,20 +187,9 @@ export function RecipeForm({
           </Button>
         ) : null}
         {isEditing && onDelete ? (
-          isConfirmingDelete ? (
-            <div className="split-actions">
-              <Button variant="danger" type="button" onClick={handleConfirmDelete}>
-                Confirm
-              </Button>
-              <Button variant="secondary" type="button" onClick={() => setIsConfirmingDelete(false)}>
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <Button variant="danger" type="button" onClick={() => setIsConfirmingDelete(true)}>
-              Delete meal
-            </Button>
-          )
+          <Button variant="danger" type="button" onClick={onDelete}>
+            Delete meal
+          </Button>
         ) : null}
       </div>
       <p className="form-message" role="status">

@@ -1,4 +1,4 @@
-import { demoFoods, demoRecipes, setDemoFoods } from "../data/demoStore.js";
+import { demoFoods, demoRecipes, setDemoFoods, setDemoRecipes } from "../data/demoStore.js";
 import { filterEq, type AuthContext, type SupabaseClient } from "../lib/supabase.js";
 import type { Food, NewFoodPayload } from "../types.js";
 import { badRequest, notFound, unauthorized } from "../utils/errors.js";
@@ -68,18 +68,32 @@ export function createFoodService({ supabaseConfigured, createSupabase }: FoodSe
     return updated;
   }
 
-  async function deleteFood(id: string, auth: AuthContext) {
+  async function deleteFood(id: string, auth: AuthContext, options?: { removeReferences?: boolean }) {
     if (!supabaseConfigured) {
       const inUse = demoRecipes.some((recipe) => recipe.ingredients.some((ingredient) => ingredient.food_id === id));
-      if (inUse) {
+      if (inUse && !options?.removeReferences) {
         throw badRequest("Ingredient is used by a meal and cannot be deleted yet");
       }
 
+      if (options?.removeReferences) {
+        setDemoRecipes(
+          demoRecipes.map((recipe) => ({
+            ...recipe,
+            ingredients: recipe.ingredients.filter((ingredient) => ingredient.food_id !== id)
+          }))
+        );
+      }
       setDemoFoods(demoFoods.filter((item) => item.id !== id));
       return { ok: true };
     }
 
     const supabase = getSupabaseForUser(auth);
+    if (options?.removeReferences) {
+      await supabase(`recipe_ingredients?${filterEq("food_id", id)}`, {
+        method: "DELETE"
+      });
+    }
+
     await supabase<Food[]>(`foods?${filterEq("id", id)}`, {
       method: "DELETE"
     });

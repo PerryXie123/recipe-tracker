@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
-import { Button, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewRecipe, Recipe } from "../types";
 
@@ -73,6 +73,7 @@ export function MealsPage({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
+  const [deleteRequest, setDeleteRequest] = useState<{ type: "single"; recipe: Recipe } | { type: "bulk"; recipeIds: string[] } | null>(null);
 
   useEffect(() => {
     setPage(1);
@@ -110,9 +111,25 @@ export function MealsPage({
   }
 
   function handleBulkDelete() {
-    onBulkDelete(checkedRecipeIds);
-    setCheckedRecipeIds([]);
+    setDeleteRequest({ type: "bulk", recipeIds: checkedRecipeIds });
   }
+
+  function confirmDeleteMeals() {
+    if (!deleteRequest) {
+      return;
+    }
+
+    if (deleteRequest.type === "single") {
+      onDelete(deleteRequest.recipe);
+    } else {
+      onBulkDelete(deleteRequest.recipeIds);
+      setCheckedRecipeIds([]);
+    }
+
+    setDeleteRequest(null);
+  }
+
+  const deleteCount = deleteRequest?.type === "single" ? 1 : deleteRequest?.recipeIds.length || 0;
 
   function handlePagePointerDown(event: PointerEvent<HTMLElement>) {
     if (!isEditing || !(event.target instanceof Element)) {
@@ -195,10 +212,30 @@ export function MealsPage({
             onIngredientWeightChange={onIngredientWeightChange}
             onAddIngredient={onAddIngredient}
             onRemoveIngredient={onRemoveIngredient}
-            onDelete={editingRecipe ? () => onDelete(editingRecipe) : undefined}
+            onDelete={editingRecipe ? () => setDeleteRequest({ type: "single", recipe: editingRecipe }) : undefined}
           />
         </div>
       </section>
+      {deleteRequest ? (
+        <ConfirmModal
+          title={`Delete ${deleteCount} meal${deleteCount === 1 ? "" : "s"}?`}
+          confirmLabel={deleteCount === 1 ? "Delete meal" : "Delete meals"}
+          onCancel={() => setDeleteRequest(null)}
+          onConfirm={confirmDeleteMeals}
+          body={
+            <>
+              <p>
+                This will permanently delete the selected meal{deleteCount === 1 ? "" : "s"} from your meal library.
+              </p>
+              {deleteRequest.type === "single" ? (
+                <div className="confirm-modal-list">
+                  <span>{deleteRequest.recipe.name}</span>
+                </div>
+              ) : null}
+            </>
+          }
+        />
+      ) : null}
     </section>
   );
 }

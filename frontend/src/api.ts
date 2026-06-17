@@ -64,8 +64,9 @@ export function updateFood(id: string, food: NewFood) {
   });
 }
 
-export function deleteFood(id: string) {
-  return request<{ ok: boolean }>(`/api/foods/${encodeURIComponent(id)}`, {
+export function deleteFood(id: string, options?: { removeReferences?: boolean }) {
+  const params = options?.removeReferences ? "?removeReferences=true" : "";
+  return request<{ ok: boolean }>(`/api/foods/${encodeURIComponent(id)}${params}`, {
     method: "DELETE"
   });
 }
