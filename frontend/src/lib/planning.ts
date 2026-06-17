@@ -1,6 +1,13 @@
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "extra";
 
-export type MealPlan = Record<string, Partial<Record<MealSlot, string[]>>>;
+export type PlannedMeal = {
+  recipeId: string;
+  portion_g: number;
+};
+
+export type MealPlanEntry = string | PlannedMeal;
+
+export type MealPlan = Record<string, Partial<Record<MealSlot, MealPlanEntry[]>>>;
 
 export const mealSlots: Array<{ id: MealSlot; label: string }> = [
   { id: "breakfast", label: "Breakfast" },
@@ -30,4 +37,16 @@ export function addDays(date: Date, days: number) {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
   return nextDate;
+}
+
+export function getPlannedRecipeId(entry: MealPlanEntry) {
+  return typeof entry === "string" ? entry : entry.recipeId;
+}
+
+export function getPlannedPortion(entry: MealPlanEntry, fallbackWeight: number) {
+  if (typeof entry === "string") {
+    return fallbackWeight;
+  }
+
+  return Number.isFinite(entry.portion_g) && entry.portion_g > 0 ? entry.portion_g : fallbackWeight;
 }

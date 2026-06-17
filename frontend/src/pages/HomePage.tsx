@@ -9,7 +9,7 @@ import {
 import type { CSSProperties } from "react";
 import { Badge, Button, Panel } from "../components/ui";
 import { formatNumber, formatUnitBasis } from "../lib/format";
-import { mealSlots, toDateKey, type MealPlan } from "../lib/planning";
+import { getPlannedPortion, getPlannedRecipeId, mealSlots, toDateKey, type MealPlan } from "../lib/planning";
 import type { Route } from "../lib/routing";
 import type { Food, Recipe } from "../types";
 
@@ -43,12 +43,17 @@ export function HomePage({
   );
   const todayPlan = mealPlan[toDateKey(new Date())] || {};
   const todayMeals = mealSlots.flatMap((slot) =>
-    (todayPlan[slot.id] || []).map((recipeId) => ({
-      slot,
-      recipe: recipes.find((item) => item.id === recipeId) || null
-    }))
+    (todayPlan[slot.id] || []).map((entry) => {
+      const recipe = recipes.find((item) => item.id === getPlannedRecipeId(entry)) || null;
+      const portion = recipe ? getPlannedPortion(entry, recipe.total_weight_g || 100) : 0;
+      return {
+        slot,
+        recipe,
+        calories: recipe ? getRecipePortionValue(recipe.calories, recipe.total_weight_g || 0, portion) : 0
+      };
+    })
   ).filter((item) => item.recipe);
-  const todayCalories = todayMeals.reduce((sum, item) => sum + (item.recipe?.calories || 0), 0);
+  const todayCalories = todayMeals.reduce((sum, item) => sum + item.calories, 0);
   const targetProgress = currentTdeeTarget ? Math.min(99, Math.round((todayCalories / currentTdeeTarget) * 100)) : 0;
   const weekBars = [46, 66, 78, 92, 58, 72, 86];
   const nextMeal = todayMeals[0]?.recipe;
@@ -155,7 +160,7 @@ export function HomePage({
           <div className="timeline-list">
             {mealSlots.map((slot, index) => {
               const slotRecipes = (todayPlan[slot.id] || [])
-                .map((recipeId) => recipes.find((recipe) => recipe.id === recipeId))
+                .map((entry) => recipes.find((recipe) => recipe.id === getPlannedRecipeId(entry)))
                 .filter(Boolean) as Recipe[];
               return (
                 <div className="timeline-item" key={slot.id}>
@@ -204,4 +209,12 @@ function EmptyMini({ title, body }: { title: string; body: string }) {
       <small>{body}</small>
     </div>
   );
+}
+
+function getRecipePortionValue(value: number, totalWeight: number, portionWeight: number) {
+  if (!totalWeight || totalWeight <= 0) {
+    return value;
+  }
+
+  return value * (portionWeight / totalWeight);
 }

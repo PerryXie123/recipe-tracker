@@ -1,8 +1,18 @@
 import { useState } from "react";
-import { IconChevronLeft, IconChevronRight, IconX } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
-import { Button, IconButton, Panel, SegmentedControl, SelectInput } from "../components/ui";
-import { addDays, getMonday, mealSlots, toDateKey, type MealPlan, type MealSlot } from "../lib/planning";
+import { Button, IconButton, NumericInput, Panel, SegmentedControl, TextInput } from "../components/ui";
+import {
+  addDays,
+  getMonday,
+  getPlannedPortion,
+  getPlannedRecipeId,
+  mealSlots,
+  toDateKey,
+  type MealPlan,
+  type MealSlot
+} from "../lib/planning";
+import { formatNumber } from "../lib/format";
 import type { Recipe } from "../types";
 
 type CalendarPageProps = {
@@ -33,7 +43,6 @@ export function CalendarPage({
   const weekStart = addDays(getMonday(new Date()), weekOffset * 7);
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
   const weekRange = `${dateFormatter.format(weekDays[0])} - ${dateFormatter.format(weekDays[6])}`;
-  const mealOptions = recipes.map((recipe) => ({ value: recipe.id, label: recipe.name }));
 
   const weekCalories = weekDays.reduce((sum, date) => sum + getDateCalories(mealPlan[toDateKey(date)], recipes), 0);
   const dailyAverage = weekCalories / 7;
@@ -50,7 +59,7 @@ export function CalendarPage({
       ...mealPlan,
       [dateKey]: {
         ...dayPlan,
-        [slot]: [...slotRecipes, recipeId]
+        [slot]: [...slotRecipes, { recipeId, portion_g: recipes.find((recipe) => recipe.id === recipeId)?.total_weight_g || 100 }]
       }
     });
   }
@@ -63,6 +72,29 @@ export function CalendarPage({
       [dateKey]: {
         ...dayPlan,
         [slot]: slotRecipes
+      }
+    });
+  }
+
+  function updatePortion(dateKey: string, slot: MealSlot, index: number, portion_g: number) {
+    const dayPlan = mealPlan[dateKey] || {};
+    const slotRecipes = dayPlan[slot] || [];
+    const nextSlotRecipes = slotRecipes.map((entry, recipeIndex) => {
+      if (recipeIndex !== index) {
+        return entry;
+      }
+
+      return {
+        recipeId: getPlannedRecipeId(entry),
+        portion_g
+      };
+    });
+
+    onMealPlanChange({
+      ...mealPlan,
+      [dateKey]: {
+        ...dayPlan,
+        [slot]: nextSlotRecipes
       }
     });
   }
@@ -104,23 +136,37 @@ export function CalendarPage({
 
               <div className="slot-grid">
                 {mealSlots.map((slot) => {
-                  const recipeIds = selectedDayPlan[slot.id] || [];
+                  const plannedMeals = selectedDayPlan[slot.id] || [];
                   return (
                     <div className="calendar-slot-group today-slot" key={slot.id}>
                       <span className="muted strong">{slot.label}</span>
                       <div className="list-stack">
-                        {recipeIds.map((recipeId, index) => {
+                        {plannedMeals.map((entry, index) => {
+                          const recipeId = getPlannedRecipeId(entry);
                           const recipe = recipes.find((item) => item.id === recipeId);
                           if (!recipe) {
                             return null;
                           }
 
+                          const portion = getPlannedPortion(entry, recipe.total_weight_g || 100);
+                          const totalWeight = recipe.total_weight_g || 0;
+                          const portionCalories = getRecipePortionValue(recipe.calories, totalWeight, portion);
+                          const portionProtein = getRecipePortionValue(recipe.protein, totalWeight, portion);
+
                           return (
                             <div className="calendar-meal-pill large" key={`${recipeId}-${index}`}>
                               <button type="button" onClick={() => onEditRecipe(recipe)}>
                                 <span>{recipe.name}</span>
-                                <small>{Math.round(recipe.calories)} cal</small>
+                                <small>{formatNumber(portionCalories)} cal - {formatNumber(portionProtein)}g protein</small>
                               </button>
+                              <NumericInput
+                                className="calendar-portion-input"
+                                label="Portion (g)"
+                                value={portion}
+                                min={0}
+                                step={0.1}
+                                onChange={(value) => updatePortion(selectedDateKey, slot.id, index, value)}
+                              />
                               <IconButton
                                 label={`Remove ${recipe.name}`}
                                 variant="subtle"
@@ -132,12 +178,9 @@ export function CalendarPage({
                           );
                         })}
                       </div>
-                      <SelectInput
-                        className="calendar-add"
-                        placeholder="Add meal"
-                        options={mealOptions}
-                        value={null}
-                        onChange={(value) => addRecipe(selectedDateKey, slot.id, value)}
+                      <CalendarMealSearch
+                        recipes={recipes}
+                        onAdd={(recipeId) => addRecipe(selectedDateKey, slot.id, recipeId)}
                       />
                     </div>
                   );
@@ -176,12 +219,13 @@ export function CalendarPage({
 
                       <div className="list-stack mt-16">
                         {mealSlots.map((slot) => {
-                          const recipeIds = dayPlan[slot.id] || [];
+                          const plannedMeals = dayPlan[slot.id] || [];
                           return (
                             <div className="calendar-slot-group overview-slot" key={slot.id}>
                               <span className="muted small strong">{slot.label}</span>
-                              {recipeIds.length === 0 ? <span className="muted small">Empty</span> : null}
-                              {recipeIds.map((recipeId, index) => {
+                              {plannedMeals.length === 0 ? <span className="muted small">Empty</span> : null}
+                              {plannedMeals.map((entry, index) => {
+                                const recipeId = getPlannedRecipeId(entry);
                                 const recipe = recipes.find((item) => item.id === recipeId);
                                 return recipe ? (
                                   <button
@@ -246,13 +290,72 @@ export function CalendarPage({
   );
 }
 
+function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (recipeId: string) => void }) {
+  const [search, setSearch] = useState("");
+  const query = search.trim().toLowerCase();
+  const matches = (query
+    ? recipes.filter((recipe) =>
+        recipe.name.toLowerCase().includes(query) ||
+        (recipe.category || "").toLowerCase().includes(query) ||
+        recipe.ingredients.some((ingredient) => ingredient.food_name.toLowerCase().includes(query))
+      )
+    : recipes
+  ).slice(0, 6);
+
+  function handleAdd(recipeId: string) {
+    onAdd(recipeId);
+    setSearch("");
+  }
+
+  return (
+    <div className="calendar-add">
+      <TextInput
+        className="calendar-meal-search"
+        label="Search meals"
+        value={search}
+        onChange={setSearch}
+        placeholder="Search name, category, or ingredient"
+      />
+      <div className="calendar-add-results">
+        {matches.map((recipe) => (
+          <button className="calendar-add-option" type="button" onClick={() => handleAdd(recipe.id)} key={recipe.id}>
+            <span>
+              <strong>{recipe.name}</strong>
+              <small>{formatNumber(recipe.calories)} cal - {formatNumber(recipe.protein)}g protein</small>
+            </span>
+            <IconPlus size={16} />
+          </button>
+        ))}
+        {recipes.length === 0 ? <span className="muted small">Create meals before planning.</span> : null}
+        {recipes.length > 0 && matches.length === 0 ? <span className="muted small">No meals match that search.</span> : null}
+      </div>
+    </div>
+  );
+}
+
 function getDateCalories(dayPlan: MealPlan[string] | undefined, recipes: Recipe[]) {
   if (!dayPlan) {
     return 0;
   }
 
   return mealSlots.reduce((sum, slot) => {
-    const recipeIds = dayPlan[slot.id] || [];
-    return sum + recipeIds.reduce((slotSum, recipeId) => slotSum + (recipes.find((recipe) => recipe.id === recipeId)?.calories || 0), 0);
+    const plannedMeals = dayPlan[slot.id] || [];
+    return sum + plannedMeals.reduce((slotSum, entry) => {
+      const recipe = recipes.find((item) => item.id === getPlannedRecipeId(entry));
+      if (!recipe) {
+        return slotSum;
+      }
+
+      const portion = getPlannedPortion(entry, recipe.total_weight_g || 100);
+      return slotSum + getRecipePortionValue(recipe.calories, recipe.total_weight_g || 0, portion);
+    }, 0);
   }, 0);
+}
+
+function getRecipePortionValue(value: number, totalWeight: number, portionWeight: number) {
+  if (!totalWeight || totalWeight <= 0) {
+    return value;
+  }
+
+  return value * (portionWeight / totalWeight);
 }

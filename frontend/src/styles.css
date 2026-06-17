@@ -1444,6 +1444,12 @@ th {
   gap: 10px;
 }
 
+.card-portion-metric,
+.result-tile {
+  display: grid;
+  gap: 8px;
+}
+
 .builder-row {
   position: relative;
   display: grid;
@@ -1487,6 +1493,9 @@ th {
 }
 
 .slot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
   margin-top: 14px;
 }
 
@@ -1498,7 +1507,7 @@ th {
 }
 
 .calendar-slot-group.today-slot {
-  min-height: 240px;
+  min-height: 0;
 }
 
 .week-grid {
@@ -1517,8 +1526,10 @@ th {
 
 .calendar-meal-pill {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 38px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 150px) 38px;
+  gap: 8px;
+  align-items: end;
+  padding: 8px;
   background: var(--green-soft);
   border-radius: 14px;
 }
@@ -1536,8 +1547,67 @@ th {
 .calendar-meal-pill button {
   display: grid;
   gap: 2px;
-  min-height: 52px;
+  min-height: 58px;
   padding: 10px;
+}
+
+.calendar-portion-input label {
+  font-size: 10px;
+}
+
+.calendar-add {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.calendar-add-results {
+  display: grid;
+  gap: 6px;
+}
+
+.calendar-add-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 8px 8px 12px;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendar-add-option:hover {
+  border-color: var(--green);
+}
+
+.calendar-add-option span,
+.calendar-add-option strong,
+.calendar-add-option small {
+  min-width: 0;
+}
+
+.calendar-add-option strong,
+.calendar-add-option small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-add-option small {
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.calendar-add-option svg {
+  justify-self: center;
+  color: var(--green);
 }
 
 .planner-meal,
@@ -1702,6 +1772,14 @@ th {
     position: static;
     width: 100%;
     box-shadow: none;
+  }
+
+  .calendar-meal-pill {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-portion-input {
+    width: 100%;
   }
 
   .dashboard-mosaic {
