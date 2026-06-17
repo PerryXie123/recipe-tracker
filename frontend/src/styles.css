@@ -449,8 +449,8 @@ th {
   display: grid;
   grid-template-columns: minmax(420px, 1.35fr) minmax(300px, 0.82fr) minmax(320px, 0.9fr);
   grid-template-areas:
-    "analytics reminder recipes"
-    "collab progress recipes"
+    "analytics-calories reminder recipes"
+    "analytics-protein progress collab"
     "schedule schedule schedule";
   gap: 16px;
 }
@@ -460,7 +460,8 @@ th {
   gap: 14px;
 }
 
-.analytics-widget { grid-area: analytics; }
+.analytics-calories-widget { grid-area: analytics-calories; }
+.analytics-protein-widget { grid-area: analytics-protein; }
 .reminder-widget { grid-area: reminder; }
 .recipe-list-widget { grid-area: recipes; }
 .collaboration-widget { grid-area: collab; }
@@ -468,27 +469,29 @@ th {
 .schedule-widget { grid-area: schedule; }
 
 .bar-chart {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(7, minmax(28px, 1fr));
   gap: 16px;
   align-items: end;
-  min-height: 156px;
-  padding-top: 8px;
+  min-height: 210px;
+  padding: 18px 0 4px;
 }
 
 .bar,
 .bar-striped {
   display: grid;
+  grid-template-rows: 1fr auto auto;
   align-items: end;
   justify-items: center;
-  height: 138px;
-  gap: 8px;
+  height: 164px;
+  gap: 6px;
 }
 
 .bar span,
 .bar-striped span {
   width: min(48px, 100%);
-  min-height: 42px;
+  min-height: 0;
   border-radius: 999px;
   background: repeating-linear-gradient(135deg, #b8bfb8 0 3px, transparent 3px 7px);
 }
@@ -505,6 +508,23 @@ th {
 .bar-striped small {
   color: var(--muted);
   font-size: 11px;
+}
+
+.bar strong,
+.bar-striped strong {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.goal-line {
+  position: absolute;
+  z-index: 1;
+  top: calc(18px + var(--goal-line-offset));
+  left: 0;
+  right: 0;
+  border-top: 2px dotted var(--red);
+  pointer-events: none;
 }
 
 .meeting-card {
@@ -608,19 +628,19 @@ th {
   position: relative;
   display: grid;
   place-items: center;
-  width: min(240px, 100%);
-  aspect-ratio: 1.45;
+  width: min(210px, 100%);
+  aspect-ratio: 1;
   margin: 8px auto 0;
-  overflow: hidden;
+  background:
+    radial-gradient(circle at center, var(--card) 0 56%, transparent 57%),
+    conic-gradient(var(--green) var(--progress), var(--line) 0);
+  border-radius: 50%;
 }
 
 .progress-arc::before {
   position: absolute;
-  inset: 0 0 auto;
-  height: 200%;
-  background:
-    radial-gradient(circle at 50% 78%, var(--card) 0 39%, transparent 40%),
-    conic-gradient(from 270deg, var(--green) var(--progress), repeating-linear-gradient(135deg, #ccd4cc 0 4px, transparent 4px 8px) 0 50%, transparent 0);
+  inset: 18px;
+  background: var(--card);
   border-radius: 50%;
   content: "";
 }
@@ -632,13 +652,15 @@ th {
 }
 
 .progress-arc strong {
-  margin-top: 24px;
+  align-self: center;
+  justify-self: center;
   font-size: 42px;
   line-height: 1;
 }
 
 .progress-arc span {
-  margin-top: 56px;
+  position: absolute;
+  bottom: 28px;
   color: var(--green);
   font-size: 11px;
 }
@@ -1227,6 +1249,14 @@ th {
   grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
 }
 
+.calendar-shell {
+  align-items: start;
+}
+
+.calendar-summary-column {
+  align-self: start;
+}
+
 .dashboard-welcome,
 .calorie-target-card,
 .stat-card,
@@ -1631,6 +1661,11 @@ th {
   gap: 16px;
 }
 
+.tdee-target-editor {
+  display: grid;
+  gap: 10px;
+}
+
 .result-tile {
   min-height: 100px;
 }
@@ -1697,10 +1732,10 @@ th {
   .dashboard-mosaic {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
-      "analytics analytics"
+      "analytics-calories analytics-calories"
+      "analytics-protein analytics-protein"
       "reminder recipes"
-      "collab recipes"
-      "progress progress"
+      "progress collab"
       "schedule schedule";
   }
 
@@ -1784,7 +1819,8 @@ th {
 
   .dashboard-mosaic {
     grid-template-areas:
-      "analytics"
+      "analytics-calories"
+      "analytics-protein"
       "reminder"
       "recipes"
       "collab"

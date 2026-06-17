@@ -29,7 +29,6 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, { day: "numeric", month
 
 export function CalendarPage({
   recipes,
-  favoriteRecipeIds,
   mealPlan,
   currentTdeeTarget,
   onMealPlanChange,
@@ -250,40 +249,13 @@ export function CalendarPage({
           )}
         </Panel>
 
-        <div className="right-panel-stack">
+        <div className="right-panel-stack calendar-summary-column">
           <CalorieTargetCard
             calories={view === "today" ? selectedDayCalories : dailyAverage}
             target={currentTdeeTarget}
             title={view === "today" ? "Selected day" : "Daily average"}
             subtitle={view === "today" ? "Planned calories for this date." : "Average planned calories across this week."}
           />
-
-          <Panel>
-            <div className="section-header">
-              <div>
-                <p className="eyebrow">Planning list</p>
-                <h2>Saved meals</h2>
-              </div>
-            </div>
-            <div className="list-stack">
-              {recipes
-                .filter((recipe) => favoriteRecipeIds.includes(recipe.id))
-                .concat(recipes.filter((recipe) => !favoriteRecipeIds.includes(recipe.id)))
-                .slice(0, 8)
-                .map((recipe) => (
-                  <button className="planner-meal" type="button" onClick={() => onEditRecipe(recipe)} key={recipe.id}>
-                    <span>{recipe.name}</span>
-                    <small>{Math.round(recipe.calories)} cal</small>
-                  </button>
-                ))}
-              {recipes.length === 0 ? (
-                <div className="empty-state compact">
-                  <strong>No meals to plan yet</strong>
-                  <p className="muted small">Create meals first, then use them in your calendar.</p>
-                </div>
-              ) : null}
-            </div>
-          </Panel>
         </div>
       </section>
     </section>
@@ -293,14 +265,14 @@ export function CalendarPage({
 function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (recipeId: string) => void }) {
   const [search, setSearch] = useState("");
   const query = search.trim().toLowerCase();
-  const matches = (query
+  const matches = query
     ? recipes.filter((recipe) =>
         recipe.name.toLowerCase().includes(query) ||
         (recipe.category || "").toLowerCase().includes(query) ||
         recipe.ingredients.some((ingredient) => ingredient.food_name.toLowerCase().includes(query))
       )
-    : recipes
-  ).slice(0, 6);
+    : [];
+  const visibleMatches = matches.slice(0, 6);
 
   function handleAdd(recipeId: string) {
     onAdd(recipeId);
@@ -316,8 +288,9 @@ function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (rec
         onChange={setSearch}
         placeholder="Search name, category, or ingredient"
       />
-      <div className="calendar-add-results">
-        {matches.map((recipe) => (
+      {query ? (
+        <div className="calendar-add-results">
+        {visibleMatches.map((recipe) => (
           <button className="calendar-add-option" type="button" onClick={() => handleAdd(recipe.id)} key={recipe.id}>
             <span>
               <strong>{recipe.name}</strong>
@@ -327,8 +300,9 @@ function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (rec
           </button>
         ))}
         {recipes.length === 0 ? <span className="muted small">Create meals before planning.</span> : null}
-        {recipes.length > 0 && matches.length === 0 ? <span className="muted small">No meals match that search.</span> : null}
-      </div>
+        {recipes.length > 0 && visibleMatches.length === 0 ? <span className="muted small">No meals match that search.</span> : null}
+        </div>
+      ) : null}
     </div>
   );
 }

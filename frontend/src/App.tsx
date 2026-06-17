@@ -15,6 +15,7 @@ import { TdeePage } from "./pages/TdeePage";
 type Theme = "light" | "dark";
 
 const TDEE_TARGET_STORAGE_KEY = "recipe-tracker-current-tdee-target";
+const PROTEIN_TARGET_STORAGE_KEY = "recipe-tracker-current-protein-target";
 const MEAL_PLAN_STORAGE_KEY = "recipe-tracker-meal-plan";
 
 function getInitialTheme(): Theme {
@@ -24,6 +25,11 @@ function getInitialTheme(): Theme {
 
 function getInitialTdeeTarget() {
   const savedTarget = Number(window.localStorage.getItem(TDEE_TARGET_STORAGE_KEY));
+  return Number.isFinite(savedTarget) && savedTarget > 0 ? savedTarget : null;
+}
+
+function getInitialProteinTarget() {
+  const savedTarget = Number(window.localStorage.getItem(PROTEIN_TARGET_STORAGE_KEY));
   return Number.isFinite(savedTarget) && savedTarget > 0 ? savedTarget : null;
 }
 
@@ -40,6 +46,7 @@ export function App() {
   const [route, setRoute] = useState<Route>(() => getRouteFromPath(window.location.pathname));
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
+  const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
   const auth = useAuth();
 
@@ -61,6 +68,12 @@ export function App() {
       window.localStorage.setItem(TDEE_TARGET_STORAGE_KEY, String(currentTdeeTarget));
     }
   }, [currentTdeeTarget]);
+
+  useEffect(() => {
+    if (currentProteinTarget) {
+      window.localStorage.setItem(PROTEIN_TARGET_STORAGE_KEY, String(currentProteinTarget));
+    }
+  }, [currentProteinTarget]);
 
   useEffect(() => {
     window.localStorage.setItem(MEAL_PLAN_STORAGE_KEY, JSON.stringify(mealPlan));
@@ -115,6 +128,7 @@ export function App() {
             recipes={tracker.recipes}
             mealPlan={mealPlan}
             currentTdeeTarget={currentTdeeTarget}
+            currentProteinTarget={currentProteinTarget}
             userName={auth.userName}
             onNavigate={navigate}
             onEditFood={tracker.editFood}
@@ -198,7 +212,12 @@ export function App() {
         ) : null}
 
         {route === "tdee" ? (
-          <TdeePage currentTarget={currentTdeeTarget} onSetCurrentTarget={setCurrentTdeeTarget} />
+          <TdeePage
+            currentTarget={currentTdeeTarget}
+            currentProteinTarget={currentProteinTarget}
+            onSetCurrentTarget={setCurrentTdeeTarget}
+            onSetCurrentProteinTarget={setCurrentProteinTarget}
+          />
         ) : null}
       </Layout>
       )}

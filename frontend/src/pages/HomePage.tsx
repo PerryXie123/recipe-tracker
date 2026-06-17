@@ -9,7 +9,15 @@ import {
 import type { CSSProperties } from "react";
 import { Badge, Button, Panel } from "../components/ui";
 import { formatNumber, formatUnitBasis } from "../lib/format";
-import { getPlannedPortion, getPlannedRecipeId, mealSlots, toDateKey, type MealPlan } from "../lib/planning";
+import {
+  addDays,
+  getMonday,
+  getPlannedPortion,
+  getPlannedRecipeId,
+  mealSlots,
+  toDateKey,
+  type MealPlan
+} from "../lib/planning";
 import type { Route } from "../lib/routing";
 import type { Food, Recipe } from "../types";
 
@@ -18,6 +26,7 @@ type HomePageProps = {
   recipes: Recipe[];
   mealPlan: MealPlan;
   currentTdeeTarget: number | null;
+  currentProteinTarget: number | null;
   userName: string | null;
   onNavigate: (route: Route) => void;
   onEditFood: (food: Food) => void;
@@ -29,18 +38,12 @@ export function HomePage({
   recipes,
   mealPlan,
   currentTdeeTarget,
+  currentProteinTarget,
   userName,
   onNavigate,
   onEditFood,
   onEditRecipe
 }: HomePageProps) {
-  const totals = recipes.reduce(
-    (sum, recipe) => ({
-      calories: sum.calories + recipe.calories,
-      protein: sum.protein + recipe.protein
-    }),
-    { calories: 0, protein: 0 }
-  );
   const todayPlan = mealPlan[toDateKey(new Date())] || {};
   const todayMeals = mealSlots.flatMap((slot) =>
     (todayPlan[slot.id] || []).map((entry) => {
@@ -49,13 +52,19 @@ export function HomePage({
       return {
         slot,
         recipe,
-        calories: recipe ? getRecipePortionValue(recipe.calories, recipe.total_weight_g || 0, portion) : 0
+        calories: recipe ? getRecipePortionValue(recipe.calories, recipe.total_weight_g || 0, portion) : 0,
+        protein: recipe ? getRecipePortionValue(recipe.protein, recipe.total_weight_g || 0, portion) : 0
       };
     })
   ).filter((item) => item.recipe);
   const todayCalories = todayMeals.reduce((sum, item) => sum + item.calories, 0);
-  const targetProgress = currentTdeeTarget ? Math.min(99, Math.round((todayCalories / currentTdeeTarget) * 100)) : 0;
-  const weekBars = [46, 66, 78, 92, 58, 72, 86];
+  const todayProtein = todayMeals.reduce((sum, item) => sum + item.protein, 0);
+  const targetProgress = currentTdeeTarget ? Math.min(100, Math.round((todayCalories / currentTdeeTarget) * 100)) : 0;
+  const weekStart = getMonday(new Date());
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const weeklyTotals = weekDays.map((date) => getDateTotals(mealPlan[toDateKey(date)], recipes));
+  const weeklyCalories = weeklyTotals.map((total) => total.calories);
+  const weeklyProtein = weeklyTotals.map((total) => total.protein);
   const nextMeal = todayMeals[0]?.recipe;
 
   return (
@@ -64,24 +73,27 @@ export function HomePage({
         <MetricCard tone="primary" title="Total Ingredients" value={foods.length} note="Saved nutrition bases" onClick={() => onNavigate("ingredients")} />
         <MetricCard title="Saved Meals" value={recipes.length} note="Recipes ready to plan" onClick={() => onNavigate("meals")} />
         <MetricCard title="Planned Calories" value={formatNumber(todayCalories)} note={currentTdeeTarget ? `${formatNumber(currentTdeeTarget)} target` : "Set a nutrition target"} onClick={() => onNavigate("calendar")} />
-        <MetricCard title="Saved Protein" value={`${formatNumber(totals.protein)}g`} note="Across all saved meals" onClick={() => onNavigate("favorites")} />
+        <MetricCard title="Planned Protein" value={`${formatNumber(todayProtein)}g`} note={currentProteinTarget ? `${formatNumber(currentProteinTarget)}g target` : "Set a protein target"} onClick={() => onNavigate("tdee")} />
       </section>
 
       <section className="dashboard-mosaic">
-        <Panel className="widget analytics-widget">
-          <div className="section-header">
-            <h3>Meal Analytics</h3>
-            <Badge>Weekly</Badge>
-          </div>
-          <div className="bar-chart" aria-label="Weekly meal analytics">
-            {weekBars.map((height, index) => (
-              <div className={index === 1 || index === 3 ? "bar active" : index === 2 ? "bar mid" : "bar-striped"} key={index}>
-                <span style={{ height: `${height}%` }} />
-                <small>{"SMTWTFS"[index]}</small>
-              </div>
-            ))}
-          </div>
-        </Panel>
+        <WeeklyMetricChart
+          className="analytics-calories-widget"
+          title="Calories Analytics"
+          unit="cal"
+          values={weeklyCalories}
+          weekDays={weekDays}
+          target={currentTdeeTarget}
+        />
+
+        <WeeklyMetricChart
+          className="analytics-protein-widget"
+          title="Protein Analytics"
+          unit="g"
+          values={weeklyProtein}
+          weekDays={weekDays}
+          target={currentProteinTarget}
+        />
 
         <Panel className="widget reminder-widget">
           <h3>Next Meal</h3>
@@ -103,7 +115,7 @@ export function HomePage({
             <h3>Saved Meals</h3>
             <Button variant="secondary" size="sm" onClick={() => onNavigate("meals")}>
               <IconPlus size={14} />
-              New
+              Add
             </Button>
           </div>
           <div className="recipe-list">
@@ -123,12 +135,15 @@ export function HomePage({
         <Panel className="widget collaboration-widget">
           <div className="section-header">
             <h3>Ingredient Library</h3>
-            <Button variant="secondary" size="sm" onClick={() => onNavigate("ingredients")}>Add Food</Button>
+            <Button variant="secondary" size="sm" onClick={() => onNavigate("ingredients")}>
+              <IconPlus size={14} />
+              Add
+            </Button>
           </div>
           <div className="collab-list">
-            {foods.slice(0, 4).map((food) => (
+            {foods.slice(0, 4).map((food, index) => (
               <button type="button" onClick={() => onEditFood(food)} key={food.id}>
-                <span className="mini-avatar">{food.name.slice(0, 1).toUpperCase()}</span>
+                <span className={`recipe-dot dot-${index % 5}`} />
                 <span>
                   <strong>{food.name}</strong>
                   <small>{formatNumber(food.calories_per_unit)} cal • {formatNumber(food.protein_per_unit)}g protein</small>
@@ -158,7 +173,7 @@ export function HomePage({
             <IconClock size={18} />
           </div>
           <div className="timeline-list">
-            {mealSlots.map((slot, index) => {
+            {mealSlots.map((slot) => {
               const slotRecipes = (todayPlan[slot.id] || [])
                 .map((entry) => recipes.find((recipe) => recipe.id === getPlannedRecipeId(entry)))
                 .filter(Boolean) as Recipe[];
@@ -166,7 +181,7 @@ export function HomePage({
                 <div className="timeline-item" key={slot.id}>
                   <span className={slotRecipes.length ? "timeline-dot done" : "timeline-dot"} />
                   <div>
-                    <small>{index + 8}:00 - {index + 9}:00</small>
+                    <small>{slot.label}</small>
                     <strong>{slotRecipes[0]?.name || slot.label}</strong>
                     <p>{slotRecipes.length ? `${slotRecipes.length} planned meal${slotRecipes.length > 1 ? "s" : ""}` : "Open slot"}</p>
                   </div>
@@ -177,6 +192,54 @@ export function HomePage({
         </Panel>
       </section>
     </section>
+  );
+}
+
+function WeeklyMetricChart({
+  className,
+  title,
+  unit,
+  values,
+  weekDays,
+  target
+}: {
+  className: string;
+  title: string;
+  unit: string;
+  values: number[];
+  weekDays: Date[];
+  target: number | null;
+}) {
+  const chartMax = Math.max(target || 0, ...values, 1);
+  const goalLineOffset = target ? 164 * (Math.max(0, 100 - (target / chartMax) * 100) / 100) : 0;
+
+  return (
+    <Panel className={`widget analytics-widget ${className}`}>
+      <div className="section-header">
+        <h3>{title}</h3>
+        <Badge>Weekly</Badge>
+      </div>
+      <div className="bar-chart" aria-label={`${title} this week`}>
+        {target ? (
+          <div
+            className="goal-line"
+            style={{ "--goal-line-offset": `${goalLineOffset}px` } as CSSProperties}
+            aria-label={`${formatNumber(target)} ${unit} goal`}
+          />
+        ) : null}
+        {values.map((value, index) => {
+          const height = chartMax ? Math.max(value > 0 ? 6 : 0, (value / chartMax) * 100) : 0;
+          const isToday = toDateKey(weekDays[index]) === toDateKey(new Date());
+          return (
+            <div className={isToday ? "bar active" : value > 0 ? "bar mid" : "bar-striped"} key={toDateKey(weekDays[index])}>
+              <span style={{ height: `${height}%` }} title={`${formatNumber(value)} ${unit} planned`} />
+              <strong>{formatNumber(value)}</strong>
+              <small>{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</small>
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
   );
 }
 
@@ -209,6 +272,28 @@ function EmptyMini({ title, body }: { title: string; body: string }) {
       <small>{body}</small>
     </div>
   );
+}
+
+function getDateTotals(dayPlan: MealPlan[string] | undefined, recipes: Recipe[]) {
+  if (!dayPlan) {
+    return { calories: 0, protein: 0 };
+  }
+
+  return mealSlots.reduce((sum, slot) => {
+    const plannedMeals = dayPlan[slot.id] || [];
+    return plannedMeals.reduce((slotSum, entry) => {
+      const recipe = recipes.find((item) => item.id === getPlannedRecipeId(entry));
+      if (!recipe) {
+        return slotSum;
+      }
+
+      const portion = getPlannedPortion(entry, recipe.total_weight_g || 100);
+      return {
+        calories: slotSum.calories + getRecipePortionValue(recipe.calories, recipe.total_weight_g || 0, portion),
+        protein: slotSum.protein + getRecipePortionValue(recipe.protein, recipe.total_weight_g || 0, portion)
+      };
+    }, sum);
+  }, { calories: 0, protein: 0 });
 }
 
 function getRecipePortionValue(value: number, totalWeight: number, portionWeight: number) {

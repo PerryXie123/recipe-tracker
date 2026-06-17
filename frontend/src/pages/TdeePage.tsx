@@ -22,16 +22,25 @@ type Goal = keyof typeof goalAdjustments;
 
 type TdeePageProps = {
   currentTarget: number | null;
+  currentProteinTarget: number | null;
   onSetCurrentTarget: (target: number) => void;
+  onSetCurrentProteinTarget: (target: number) => void;
 };
 
-export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
+export function TdeePage({
+  currentTarget,
+  currentProteinTarget,
+  onSetCurrentTarget,
+  onSetCurrentProteinTarget
+}: TdeePageProps) {
   const [sex, setSex] = useState<Sex>("male");
   const [age, setAge] = useState(30);
   const [height, setHeight] = useState(178);
   const [weight, setWeight] = useState(80);
   const [activity, setActivity] = useState<Activity>("moderate");
   const [goal, setGoal] = useState<Goal>("maintain");
+  const defaultProteinTarget = Math.round(weight * 2);
+  const [proteinTarget, setProteinTarget] = useState(defaultProteinTarget);
 
   const result = useMemo(() => {
     const bmr = 10 * weight + 6.25 * height - 5 * age + (sex === "male" ? 5 : -161);
@@ -40,8 +49,13 @@ export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
     const proteinLow = weight * 1.6;
     const proteinHigh = weight * 2.2;
 
-    return { bmr, tdee, target, proteinLow, proteinHigh };
+    return { bmr, tdee, target, proteinLow, proteinHigh, defaultProteinTarget: weight * 2 };
   }, [activity, age, goal, height, sex, weight]);
+
+  function handleWeightChange(nextWeight: number) {
+    setWeight(nextWeight);
+    setProteinTarget(Math.round(nextWeight * 2));
+  }
 
   return (
     <section className="page-stack">
@@ -64,7 +78,7 @@ export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
           <div className="three-grid">
             <NumericInput label="Age" value={age} onChange={setAge} min={0} />
             <NumericInput label="Height (cm)" value={height} onChange={setHeight} min={0} />
-            <NumericInput label="Weight (kg)" value={weight} onChange={setWeight} min={0} />
+            <NumericInput label="Weight (kg)" value={weight} onChange={handleWeightChange} min={0} />
           </div>
 
           <SelectInput
@@ -98,12 +112,32 @@ export function TdeePage({ currentTarget, onSetCurrentTarget }: TdeePageProps) {
             <p className="muted">Target calories based on your selected goal.</p>
             <div className="mt-16">
               <Button type="button" onClick={() => onSetCurrentTarget(Math.round(result.target))}>
-                Set for current period
+                Set calories
               </Button>
             </div>
             {currentTarget ? (
               <p className="muted small mt-8">
                 Current period target: {formatNumber(currentTarget)} cal/day
+              </p>
+            ) : null}
+          </div>
+
+          <div className="tdee-target-editor">
+            <NumericInput
+              label="Protein target (g/day)"
+              value={proteinTarget}
+              onChange={setProteinTarget}
+              min={0}
+            />
+            <Button type="button" onClick={() => onSetCurrentProteinTarget(Math.round(proteinTarget))}>
+              Set protein
+            </Button>
+            <p className="muted small">
+              Default: {formatNumber(result.defaultProteinTarget)}g/day from 2g per kg body weight.
+            </p>
+            {currentProteinTarget ? (
+              <p className="muted small">
+                Current protein target: {formatNumber(currentProteinTarget)}g/day
               </p>
             ) : null}
           </div>
