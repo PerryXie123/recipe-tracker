@@ -50,6 +50,25 @@ const routeTitles: Record<Route, { title: string; description: string }> = {
   tdee: { title: "Nutrition", description: "Estimate maintenance calories and set your current target." }
 };
 
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
+
+function getFirstName(userName: string | null, userEmail: string | null) {
+  const displayName = userName || userEmail?.split("@")[0] || "";
+  return displayName.trim().split(/[\s._-]+/)[0] || "there";
+}
+
 export function Layout({
   route,
   health,
@@ -66,6 +85,8 @@ export function Layout({
   children
 }: LayoutProps) {
   const initials = (userName || userEmail || "R").slice(0, 1).toUpperCase();
+  const pageTitle =
+    route === "home" ? `${getTimeGreeting()}, ${getFirstName(userName, userEmail)}` : routeTitles[route].title;
 
   return (
     <div className="app-shell">
@@ -130,7 +151,7 @@ export function Layout({
 
           <div className="page-title-row">
             <div>
-              <h1>{routeTitles[route].title}</h1>
+              <h1>{pageTitle}</h1>
               <p className="muted">{routeTitles[route].description}</p>
             </div>
             <div className="inline-actions">

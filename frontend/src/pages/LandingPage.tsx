@@ -1,14 +1,13 @@
 import {
   IconCalendarWeek,
-  IconChartPie,
-  IconClock,
+  IconChevronRight,
   IconMoon,
+  IconScale,
   IconSoup,
   IconSun,
   IconToolsKitchen2
 } from "@tabler/icons-react";
-import type { CSSProperties } from "react";
-import { Button, IconButton, Panel } from "../components/ui";
+import { Button, IconButton } from "../components/ui";
 
 type LandingPageProps = {
   authConfigured: boolean;
@@ -19,6 +18,12 @@ type LandingPageProps = {
   onThemeChange: () => void;
 };
 
+const landingSteps = [
+  { icon: IconToolsKitchen2, title: "Build your pantry", body: "Save foods with the units and nutrition values you actually use." },
+  { icon: IconSoup, title: "Create meals", body: "Combine ingredients once, then reuse portions without recalculating." },
+  { icon: IconCalendarWeek, title: "Plan the week", body: "Drop meals into calendar slots and keep calories visible as you go." }
+];
+
 export function LandingPage({
   authConfigured,
   authConfigMessage,
@@ -28,130 +33,70 @@ export function LandingPage({
   onThemeChange
 }: LandingPageProps) {
   return (
-    <div className="app-shell">
-      <div className="app-frame landing-frame">
-        <aside className="sidebar">
-          <div className="brand sidebar-brand">
-            <span className="brand-mark">R</span>
-            <strong>Recipe Tracker</strong>
-          </div>
+    <div className="landing-shell">
+      <header className="landing-nav">
+        <div className="brand">
+          <span className="brand-mark">R</span>
+          <strong>Recipe Tracker</strong>
+        </div>
+        <div className="topbar-actions">
+          <IconButton label="Toggle colour scheme" onClick={onThemeChange}>
+            {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
+          </IconButton>
+          <Button disabled={!authConfigured || isAuthLoading} loading={isAuthLoading} onClick={onSignIn}>
+            Sign in
+          </Button>
+        </div>
+      </header>
 
-          <div className="sidebar-section">
-            <span className="sidebar-label">Menu</span>
-            <div className="nav-list">
-              <span className="nav-item active"><IconChartPie size={18} /> Dashboard</span>
-              <span className="nav-item"><IconToolsKitchen2 size={18} /> Ingredients</span>
-              <span className="nav-item"><IconSoup size={18} /> Meals</span>
-              <span className="nav-item"><IconCalendarWeek size={18} /> Calendar</span>
-            </div>
-          </div>
-        </aside>
-
-        <div className="app-main">
-          <header className="topbar">
-            <div className="topbar-actions">
-              <IconButton label="Toggle colour scheme" onClick={onThemeChange}>
-                {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
-              </IconButton>
-              <Button disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>
-                Sign in
+      <main className="landing-main">
+        <section className="landing-hero">
+          <div className="landing-copy-block">
+            <span className="landing-kicker">Meal planning from your own ingredients</span>
+            <h1 className="landing-title">Recipe Tracker</h1>
+            <p className="landing-copy">
+              Keep your ingredient library, favourite meals, portions, calories, and weekly plan in one calm workspace.
+            </p>
+            <div className="landing-actions">
+              <Button disabled={!authConfigured || isAuthLoading} loading={isAuthLoading} onClick={onSignIn}>
+                Sign in with Google
+                <IconChevronRight size={17} />
               </Button>
             </div>
-          </header>
-
-          <div className="page-title-row">
-            <div>
-              <h1>Dashboard</h1>
-              <p className="muted">Plan, build, and track meals from ingredients you trust.</p>
-            </div>
-            <div className="inline-actions">
-              <Button disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>Add Meal</Button>
-              <Button variant="secondary" disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>Add Ingredient</Button>
-            </div>
+            {authConfigMessage ? <div className="auth-banner landing-auth-banner">{authConfigMessage}</div> : null}
           </div>
 
-          {authConfigMessage ? <div className="auth-banner">{authConfigMessage}</div> : null}
+          <div className="landing-visual" aria-hidden="true">
+            <div className="plate-visual">
+              <span className="plate-ring" />
+              <span className="plate-segment segment-greens" />
+              <span className="plate-segment segment-grains" />
+              <span className="plate-segment segment-protein" />
+              <span className="plate-center"><IconScale size={30} /></span>
+            </div>
+            <div className="landing-stat stat-a">
+              <span>Portions</span>
+              <strong>100g</strong>
+            </div>
+            <div className="landing-stat stat-b">
+              <span>Weekly plan</span>
+              <strong>Ready</strong>
+            </div>
+          </div>
+        </section>
 
-          <main className="workspace">
-            <section className="donezo-dashboard">
-              <section className="metric-grid">
-                <div className="metric-card primary"><span>Recipe Preview</span><strong>24</strong><small>Example saved meals</small><i>↗</i></div>
-                <div className="metric-card"><span>Food Preview</span><strong>60</strong><small>Example ingredient library</small><i>↗</i></div>
-                <div className="metric-card"><span>Week Plan</span><strong>12</strong><small>Example planned meals</small><i>↗</i></div>
-                <div className="metric-card"><span>Daily Target</span><strong>2k</strong><small>Example calorie target</small><i>↗</i></div>
-              </section>
-
-              <section className="dashboard-mosaic">
-                <Panel className="widget analytics-widget">
-                  <div className="section-header"><h3>Recipe Analytics</h3><span className="badge">Preview</span></div>
-                  <div className="bar-chart">
-                    {[48, 70, 82, 96, 62, 76, 88].map((height, index) => (
-                      <div className={index === 1 || index === 3 ? "bar active" : index === 2 ? "bar mid" : "bar-striped"} key={index}>
-                        <span style={{ height: `${height}%` }} />
-                        <small>{"SMTWTFS"[index]}</small>
-                      </div>
-                    ))}
-                  </div>
-                </Panel>
-
-                <Panel className="widget reminder-widget">
-                  <h3>Next Meal</h3>
-                  <div className="meeting-card">
-                    <IconClock size={18} />
-                    <div><strong>Chicken rice bowl</strong><p>Example planned meal • 520 cal</p></div>
-                  </div>
-                  <Button className="full-button" disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>Open Calendar</Button>
-                </Panel>
-
-                <Panel className="widget recipe-list-widget">
-                  <div className="section-header"><h3>Recipes</h3><Button variant="secondary" size="sm" disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>+ New</Button></div>
-                  <div className="recipe-list">
-                    {["Chicken rice bowl", "Greek yoghurt oats", "Salmon salad", "Turkey burrito", "Protein smoothie"].map((name, index) => (
-                      <div className="mock-recipe-row" key={name}>
-                        <span className={`recipe-dot dot-${index % 5}`} />
-                        <span><strong>{name}</strong><small>Example recipe preview</small></span>
-                      </div>
-                    ))}
-                  </div>
-                </Panel>
-
-                <Panel className="widget collaboration-widget">
-                  <div className="section-header"><h3>Ingredient Library</h3><Button variant="secondary" size="sm" disabled={!authConfigured || isAuthLoading} onClick={onSignIn}>Add Food</Button></div>
-                  <div className="collab-list">
-                    {["Chicken breast", "Brown rice", "Greek yoghurt", "Avocado"].map((name, index) => (
-                      <div className="mock-recipe-row" key={name}>
-                        <span className="mini-avatar">{name[0]}</span>
-                        <span><strong>{name}</strong><small>{index * 40 + 120} cal • flexible basis</small></span>
-                        <span className="badge">per unit</span>
-                      </div>
-                    ))}
-                  </div>
-                </Panel>
-
-                <Panel className="widget progress-widget">
-                  <h3>Nutrition Progress</h3>
-                  <div className="progress-arc" style={{ "--progress": "41%" } as CSSProperties}>
-                    <strong>41%</strong>
-                    <span>Target Met</span>
-                  </div>
-                </Panel>
-
-                <Panel className="widget schedule-widget">
-                  <div className="section-header"><h3>Today’s Schedule</h3></div>
-                  <div className="timeline-list">
-                    {["Breakfast", "Lunch", "Snack", "Dinner"].map((name, index) => (
-                      <div className="timeline-item" key={name}>
-                        <span className={index < 2 ? "timeline-dot done" : "timeline-dot"} />
-                        <div><small>{index + 8}:00 - {index + 9}:00</small><strong>{name}</strong><p>Recipe planning slot</p></div>
-                      </div>
-                    ))}
-                  </div>
-                </Panel>
-              </section>
-            </section>
-          </main>
-        </div>
-      </div>
+        <section className="landing-step-grid" aria-label="Recipe Tracker workflow">
+          {landingSteps.map((step) => (
+            <div className="landing-step" key={step.title}>
+              <step.icon size={22} />
+              <div>
+                <h2>{step.title}</h2>
+                <p>{step.body}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+      </main>
     </div>
   );
 }

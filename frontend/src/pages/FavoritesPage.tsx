@@ -56,7 +56,7 @@ export function FavoritesPage({
 
   return (
     <section className="page-stack">
-      <Panel>
+      <Panel className="favorites-panel">
         <div className="toolbar">
           <TextInput
             className="search-field"

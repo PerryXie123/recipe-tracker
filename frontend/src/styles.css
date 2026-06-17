@@ -958,6 +958,10 @@ th {
 
 .landing-shell {
   min-height: 100vh;
+  padding: clamp(18px, 3vw, 34px) 0;
+  background:
+    linear-gradient(135deg, rgba(14, 113, 72, 0.1), transparent 36%),
+    var(--frame-bg);
 }
 
 .auth-loading-screen {
@@ -999,18 +1003,32 @@ th {
 
 .landing-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 480px);
+  gap: clamp(26px, 5vw, 72px);
   align-items: stretch;
-  min-height: 500px;
+  min-height: min(620px, calc(100vh - 230px));
+  padding: clamp(22px, 4vw, 58px) 0 18px;
 }
 
 .landing-copy-block {
   align-content: center;
 }
 
+.landing-kicker {
+  width: fit-content;
+  padding: 8px 12px;
+  color: var(--green);
+  background: var(--green-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
 .landing-title {
-  font-size: clamp(52px, 9vw, 104px);
+  max-width: 760px;
+  font-size: clamp(58px, 10vw, 118px);
   line-height: 0.9;
   font-weight: 760;
 }
@@ -1023,8 +1041,154 @@ th {
   line-height: 1.55;
 }
 
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.landing-auth-banner {
+  width: fit-content;
+  margin: 6px 0 0;
+}
+
 .feature-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.landing-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+
+.plate-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 420px);
+  aspect-ratio: 1;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+}
+
+.plate-ring {
+  position: absolute;
+  inset: 9%;
+  border: 16px solid var(--card-soft);
+  border-radius: 50%;
+}
+
+.plate-segment {
+  position: absolute;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.segment-greens {
+  top: 24%;
+  left: 20%;
+  background: var(--green);
+}
+
+.segment-grains {
+  right: 18%;
+  bottom: 24%;
+  background: var(--yellow);
+}
+
+.segment-protein {
+  top: 18%;
+  right: 24%;
+  background: var(--orange);
+}
+
+.plate-center {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  color: var(--green);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.landing-stat {
+  position: absolute;
+  display: grid;
+  gap: 4px;
+  min-width: 136px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+
+.landing-stat span,
+.landing-step p {
+  color: var(--muted);
+}
+
+.landing-stat span {
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.landing-stat strong {
+  font-size: 24px;
+}
+
+.stat-a {
+  left: 0;
+  bottom: 18%;
+}
+
+.stat-b {
+  top: 18%;
+  right: 0;
+}
+
+.landing-step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding-bottom: 12px;
+}
+
+.landing-step {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  min-height: 132px;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.landing-step svg {
+  color: var(--green);
+}
+
+.landing-step h2 {
+  font-size: 18px;
+}
+
+.landing-step p {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .stat-grid,
@@ -1156,6 +1320,7 @@ th {
 .ingredients-panel {
   display: grid;
   grid-template-rows: auto minmax(520px, auto) auto;
+  gap: 20px;
 }
 
 .table-wrap {
@@ -1249,6 +1414,11 @@ th {
 }
 
 .meals-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.favorites-panel {
   display: grid;
   gap: 20px;
 }
@@ -1500,6 +1670,7 @@ th {
   .toolbar,
   .dashboard-mosaic,
   .metric-grid,
+  .landing-step-grid,
   .content-layout,
   .meals-layout,
   .dashboard-grid,
@@ -1517,6 +1688,20 @@ th {
   .calorie-target-card,
   .dashboard-welcome {
     grid-template-columns: 1fr;
+  }
+
+  .landing-hero {
+    min-height: auto;
+  }
+
+  .landing-visual {
+    min-height: 320px;
+  }
+
+  .landing-stat {
+    position: static;
+    width: 100%;
+    box-shadow: none;
   }
 
   .dashboard-mosaic {
