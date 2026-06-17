@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
-import { Badge, Panel, TextInput } from "../components/ui";
+import { Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Recipe } from "../types";
 
@@ -65,7 +65,6 @@ export function FavoritesPage({
             onChange={setSearch}
             placeholder="Search name, category, or ingredient"
           />
-          <Badge>{filteredRecipes.length} saved</Badge>
         </div>
 
         {filteredRecipes.length === 0 ? (

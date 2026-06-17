@@ -1314,11 +1314,24 @@ th {
 }
 
 .calendar-shell {
+  grid-template-columns: 1fr;
   align-items: start;
 }
 
 .calendar-summary-column {
   align-self: start;
+}
+
+.calendar-panel > .section-header .segmented-control {
+  width: auto;
+  min-height: 34px;
+  padding: 3px;
+}
+
+.calendar-panel > .section-header .segment {
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 11px;
 }
 
 .dashboard-welcome,
@@ -1631,8 +1644,8 @@ th {
 }
 
 .calendar-meal-pill .icon-button-control {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
 }
 
 .calendar-portion-input label {
@@ -1909,12 +1922,31 @@ th {
   }
 
   .calendar-meal-pill {
-    grid-template-columns: minmax(0, 1fr) 42px;
+    grid-template-columns: minmax(0, 1fr) minmax(90px, 118px) 34px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .calendar-meal-pill button {
+    min-height: 40px;
+    padding: 4px 6px;
   }
 
   .calendar-portion-input {
-    grid-column: 1 / -1;
     width: 100%;
+  }
+
+  .calendar-portion-input input {
+    min-height: 38px;
+  }
+
+  .calendar-portion-input label {
+    font-size: 9px;
+  }
+
+  .calendar-meal-pill .icon-button-control {
+    width: 32px;
+    height: 32px;
   }
 
   .dashboard-mosaic {
@@ -1952,16 +1984,45 @@ th {
 
   .page-title-row .inline-actions,
   .toolbar .inline-actions {
-    width: 100%;
+    width: auto;
   }
 
   .page-title-row .button,
-  .toolbar .button,
   .calendar-add-option,
   .planner-meal,
   .mini-row,
   .calendar-readonly-meal {
     width: 100%;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: end;
+  }
+
+  .toolbar .search-field {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .toolbar .button {
+    min-width: 92px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .calendar-panel > .section-header .segmented-control {
+    justify-self: end;
+    width: auto;
+    min-height: 30px;
+    padding: 3px;
+  }
+
+  .calendar-panel > .section-header .segment {
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 11px;
   }
 
   .profile-chip {

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
-import { Badge, Button, ConfirmModal, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewFood, Recipe } from "../types";
 
@@ -139,7 +139,6 @@ export function IngredientsPage({
               placeholder="Search by name"
             />
             <div className="inline-actions">
-              <Badge>{filteredFoods.length} matches</Badge>
               {isConfirmingBulkDelete ? (
                 <>
                   <Button variant="danger" type="button" onClick={handleBulkDelete}>

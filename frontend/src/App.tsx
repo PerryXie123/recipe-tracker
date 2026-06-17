@@ -24,22 +24,30 @@ function getInitialTheme(): Theme {
 }
 
 function getInitialTdeeTarget() {
-  const savedTarget = Number(window.localStorage.getItem(TDEE_TARGET_STORAGE_KEY));
+  const savedTarget = Number(getStoredValue(TDEE_TARGET_STORAGE_KEY));
   return Number.isFinite(savedTarget) && savedTarget > 0 ? savedTarget : null;
 }
 
 function getInitialProteinTarget() {
-  const savedTarget = Number(window.localStorage.getItem(PROTEIN_TARGET_STORAGE_KEY));
+  const savedTarget = Number(getStoredValue(PROTEIN_TARGET_STORAGE_KEY));
   return Number.isFinite(savedTarget) && savedTarget > 0 ? savedTarget : null;
 }
 
 function getInitialMealPlan(): MealPlan {
   try {
-    const savedPlan = window.localStorage.getItem(MEAL_PLAN_STORAGE_KEY);
+    const savedPlan = getStoredValue(MEAL_PLAN_STORAGE_KEY);
     return savedPlan ? (JSON.parse(savedPlan) as MealPlan) : {};
   } catch {
     return {};
   }
+}
+
+function getStorageKey(baseKey: string, userEmail?: string | null) {
+  return userEmail ? `${baseKey}:${userEmail.toLowerCase()}` : baseKey;
+}
+
+function getStoredValue(baseKey: string, userEmail?: string | null) {
+  return window.localStorage.getItem(getStorageKey(baseKey, userEmail)) || window.localStorage.getItem(baseKey);
 }
 
 export function App() {
@@ -48,6 +56,7 @@ export function App() {
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
+  const [loadedStorageUser, setLoadedStorageUser] = useState<string | null>(null);
   const auth = useAuth();
 
   function navigate(nextRoute: Route) {
@@ -64,20 +73,51 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
+    if (!auth.userEmail) {
+      return;
+    }
+
+    const savedTdeeTarget = Number(getStoredValue(TDEE_TARGET_STORAGE_KEY, auth.userEmail));
+    const savedProteinTarget = Number(getStoredValue(PROTEIN_TARGET_STORAGE_KEY, auth.userEmail));
+    const savedPlan = getStoredValue(MEAL_PLAN_STORAGE_KEY, auth.userEmail);
+
+    setCurrentTdeeTarget(Number.isFinite(savedTdeeTarget) && savedTdeeTarget > 0 ? savedTdeeTarget : null);
+    setCurrentProteinTarget(Number.isFinite(savedProteinTarget) && savedProteinTarget > 0 ? savedProteinTarget : null);
+    try {
+      setMealPlan(savedPlan ? (JSON.parse(savedPlan) as MealPlan) : {});
+    } catch {
+      setMealPlan({});
+    }
+    setLoadedStorageUser(auth.userEmail);
+  }, [auth.userEmail]);
+
+  useEffect(() => {
+    if (auth.userEmail && loadedStorageUser !== auth.userEmail) {
+      return;
+    }
+
     if (currentTdeeTarget) {
-      window.localStorage.setItem(TDEE_TARGET_STORAGE_KEY, String(currentTdeeTarget));
+      window.localStorage.setItem(getStorageKey(TDEE_TARGET_STORAGE_KEY, auth.userEmail), String(currentTdeeTarget));
     }
-  }, [currentTdeeTarget]);
+  }, [auth.userEmail, currentTdeeTarget, loadedStorageUser]);
 
   useEffect(() => {
+    if (auth.userEmail && loadedStorageUser !== auth.userEmail) {
+      return;
+    }
+
     if (currentProteinTarget) {
-      window.localStorage.setItem(PROTEIN_TARGET_STORAGE_KEY, String(currentProteinTarget));
+      window.localStorage.setItem(getStorageKey(PROTEIN_TARGET_STORAGE_KEY, auth.userEmail), String(currentProteinTarget));
     }
-  }, [currentProteinTarget]);
+  }, [auth.userEmail, currentProteinTarget, loadedStorageUser]);
 
   useEffect(() => {
-    window.localStorage.setItem(MEAL_PLAN_STORAGE_KEY, JSON.stringify(mealPlan));
-  }, [mealPlan]);
+    if (auth.userEmail && loadedStorageUser !== auth.userEmail) {
+      return;
+    }
+
+    window.localStorage.setItem(getStorageKey(MEAL_PLAN_STORAGE_KEY, auth.userEmail), JSON.stringify(mealPlan));
+  }, [auth.userEmail, loadedStorageUser, mealPlan]);
 
   useEffect(() => {
     function handlePopState() {

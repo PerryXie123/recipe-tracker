@@ -132,6 +132,12 @@ export function CalendarPage({
     <section className="page-stack">
       <section className="calendar-shell">
         <Panel className="calendar-panel">
+          <CalorieTargetCard
+            calories={view === "today" ? selectedDayCalories : dailyAverage}
+            target={currentTdeeTarget}
+            title={view === "today" ? "Selected day" : "Daily average"}
+            subtitle={view === "today" ? "Planned calories for this date." : "Average planned calories across this week."}
+          />
           <div className="section-header">
             <div>
               <p className="eyebrow">{view === "today" ? "Today" : "Week starting Monday"}</p>
@@ -283,14 +289,6 @@ export function CalendarPage({
           )}
         </Panel>
 
-        <div className="right-panel-stack calendar-summary-column">
-          <CalorieTargetCard
-            calories={view === "today" ? selectedDayCalories : dailyAverage}
-            target={currentTdeeTarget}
-            title={view === "today" ? "Selected day" : "Daily average"}
-            subtitle={view === "today" ? "Planned calories for this date." : "Average planned calories across this week."}
-          />
-        </div>
       </section>
     </section>
   );
