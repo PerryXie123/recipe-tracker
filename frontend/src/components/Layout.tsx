@@ -136,6 +136,10 @@ export function Layout({
                 </span>
               </div>
             ) : null}
+            <button className="nav-item" type="button" aria-pressed={theme === "dark"} onClick={onThemeChange}>
+              {theme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
+              <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+            </button>
             <button className="nav-item" type="button" onClick={onSignOut}>
               <IconLogout size={18} />
               <span>Logout</span>
@@ -158,13 +162,6 @@ export function Layout({
               <strong>Plateful</strong>
             </button>
             <div className="topbar-actions">
-              <IconButton
-                label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                pressed={theme === "dark"}
-                onClick={onThemeChange}
-              >
-                {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
-              </IconButton>
               {!userEmail ? (
                 <Button size="sm" loading={isAuthLoading} onClick={onSignIn}>
                   Sign in

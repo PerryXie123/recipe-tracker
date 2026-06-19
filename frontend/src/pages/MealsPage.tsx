@@ -88,6 +88,12 @@ export function MealsPage({
   }, [recipes]);
 
   useEffect(() => {
+    if (editingRecipeId) {
+      setIsMobileEditorOpen(true);
+    }
+  }, [editingRecipeId]);
+
+  useEffect(() => {
     if (message === "Meal added." || message === "Meal saved.") {
       setIsMobileEditorOpen(false);
     }

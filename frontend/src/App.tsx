@@ -79,6 +79,7 @@ export function App() {
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date());
   const [loadedStorageUser, setLoadedStorageUser] = useState<string | null>(null);
   const [isRemoteStateLoaded, setIsRemoteStateLoaded] = useState(false);
   const auth = useAuth();
@@ -338,7 +339,9 @@ export function App() {
             favoriteRecipeIds={tracker.favoriteRecipeIds}
             mealPlan={mealPlan}
             currentTdeeTarget={currentTdeeTarget}
+            selectedDate={calendarSelectedDate}
             onMealPlanChange={setMealPlan}
+            onSelectedDateChange={setCalendarSelectedDate}
             onEditRecipe={tracker.editRecipe}
           />
         ) : null}

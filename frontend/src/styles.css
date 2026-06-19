@@ -265,14 +265,14 @@ th {
 }
 
 .topbar {
-  display: flex;
+  display: none;
   justify-content: space-between;
   align-items: center;
   min-height: 48px;
   padding: 0 0 16px;
 }
 
-.menu-toggle,
+.icon-button-control.menu-toggle,
 .nav-backdrop,
 .mobile-header-brand {
   display: none;
@@ -2071,7 +2071,7 @@ th {
     pointer-events: auto;
   }
 
-  .menu-toggle {
+  .icon-button-control.menu-toggle {
     display: grid;
   }
 
@@ -2229,6 +2229,7 @@ th {
     top: 0;
     right: 0;
     left: 0;
+    display: flex;
     min-height: calc(64px + env(safe-area-inset-top));
     margin: 0;
     padding: calc(10px + env(safe-area-inset-top)) 14px 10px;

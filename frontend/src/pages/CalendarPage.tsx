@@ -22,7 +22,9 @@ type CalendarPageProps = {
   favoriteRecipeIds: string[];
   mealPlan: MealPlan;
   currentTdeeTarget: number | null;
+  selectedDate: Date;
   onMealPlanChange: (mealPlan: MealPlan) => void;
+  onSelectedDateChange: (date: Date) => void;
   onEditRecipe: (recipe: Recipe) => void;
 };
 
@@ -33,12 +35,13 @@ export function CalendarPage({
   recipes,
   mealPlan,
   currentTdeeTarget,
+  selectedDate,
   onMealPlanChange,
+  onSelectedDateChange,
   onEditRecipe
 }: CalendarPageProps) {
   const [view, setView] = useState<"today" | "week">("today");
   const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [isMobileAddOpen, setIsMobileAddOpen] = useState(false);
   const [mobileSlot, setMobileSlot] = useState<MealSlot>("breakfast");
@@ -153,7 +156,7 @@ export function CalendarPage({
       return;
     }
 
-    setSelectedDate(addDays(selectedDate, deltaX > 0 ? -1 : 1));
+    onSelectedDateChange(addDays(selectedDate, deltaX > 0 ? -1 : 1));
   }
 
   function handleDatePick(value: string) {
@@ -162,7 +165,7 @@ export function CalendarPage({
       return;
     }
 
-    setSelectedDate(new Date(year, month - 1, day));
+    onSelectedDateChange(new Date(year, month - 1, day));
     setView("today");
   }
 
@@ -200,14 +203,14 @@ export function CalendarPage({
               onTouchEnd={handlePlannerTouchEnd}
             >
               <div className="inline-actions">
-                <IconButton label="Previous day" onClick={() => setSelectedDate(addDays(selectedDate, -1))}>
+                <IconButton label="Previous day" onClick={() => onSelectedDateChange(addDays(selectedDate, -1))}>
                   <IconChevronLeft size={18} />
                 </IconButton>
-                <Button variant="secondary" size="sm" type="button" onClick={() => setSelectedDate(new Date())}>
+                <Button variant="secondary" size="sm" type="button" onClick={() => onSelectedDateChange(new Date())}>
                   Today
                 </Button>
                 <DatePickerButton value={selectedDateKey} onChange={handleDatePick} />
-                <IconButton label="Next day" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
+                <IconButton label="Next day" onClick={() => onSelectedDateChange(addDays(selectedDate, 1))}>
                   <IconChevronRight size={18} />
                 </IconButton>
               </div>
