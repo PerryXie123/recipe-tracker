@@ -5,6 +5,7 @@ import { useRecipeTracker } from "./hooks/useRecipeTracker";
 import { getUserState, saveUserState } from "./api";
 import { getPathForRoute, getRouteFromPath, type Route } from "./lib/routing";
 import { toDateKey, type MealPlan } from "./lib/planning";
+import { supabase } from "./lib/supabase";
 import { HomePage } from "./pages/HomePage";
 import { IngredientsPage } from "./pages/IngredientsPage";
 import { MealsPage } from "./pages/MealsPage";
@@ -296,17 +297,36 @@ export function App() {
       }
     }
 
+    let realtimeRefreshTimeoutId: number | undefined;
     const intervalId = window.setInterval(() => void refreshMealPlan(), 15_000);
+    const userId = auth.session?.user.id;
+    const realtimeChannel = supabase && userId
+      ? supabase
+          .channel(`planned-meals-${userId}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "planned_meals", filter: `user_id=eq.${userId}` },
+            () => {
+              window.clearTimeout(realtimeRefreshTimeoutId);
+              realtimeRefreshTimeoutId = window.setTimeout(() => void refreshMealPlan(), 250);
+            }
+          )
+          .subscribe()
+      : null;
     window.addEventListener("focus", refreshMealPlan);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       isMounted = false;
       window.clearInterval(intervalId);
+      window.clearTimeout(realtimeRefreshTimeoutId);
+      if (realtimeChannel && supabase) {
+        void supabase.removeChannel(realtimeChannel);
+      }
       window.removeEventListener("focus", refreshMealPlan);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [auth.accessToken, auth.userEmail, isRemoteStateLoaded]);
+  }, [auth.accessToken, auth.session?.user.id, auth.userEmail, isRemoteStateLoaded]);
 
   useEffect(() => {
     function handlePopState() {
