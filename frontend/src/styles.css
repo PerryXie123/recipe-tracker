@@ -2299,17 +2299,22 @@ th {
   }
 
   .calendar-meal-pill {
-    grid-template-columns: 26px minmax(0, 1fr) minmax(82px, 108px) 34px;
+    grid-template-areas:
+      "drag meal remove"
+      ". portion .";
+    grid-template-columns: 26px minmax(0, 1fr) 34px;
     gap: 6px;
     padding: 6px;
   }
 
   .calendar-meal-drag-handle {
+    grid-area: drag;
     width: 26px;
     height: 38px;
   }
 
-  .calendar-meal-pill button {
+  .calendar-meal-pill > button:not(.icon-button-control) {
+    grid-area: meal;
     min-height: 40px;
     padding: 4px 6px;
   }
@@ -2325,6 +2330,7 @@ th {
   }
 
   .calendar-portion-input {
+    grid-area: portion;
     width: 100%;
   }
 
@@ -2337,6 +2343,7 @@ th {
   }
 
   .calendar-meal-pill .icon-button-control {
+    grid-area: remove;
     width: 32px;
     height: 32px;
   }
