@@ -4,8 +4,9 @@ import { IconTrash } from "@tabler/icons-react";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
-import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, SelectInput, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
+import { librarySortOptions, sortLibraryItems, type LibrarySort } from "../lib/sorting";
 import type { Food, NewRecipe, Recipe } from "../types";
 
 const MEALS_PER_PAGE = 12;
@@ -72,6 +73,7 @@ export function MealsPage({
   onFavoriteToggle
 }: MealsPageProps) {
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<LibrarySort>("name-asc");
   const [page, setPage] = useState(1);
   const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
@@ -79,7 +81,7 @@ export function MealsPage({
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, sort]);
 
   useEffect(() => {
     setCheckedRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
@@ -91,21 +93,24 @@ export function MealsPage({
     }
   }, [message]);
 
-  const filteredRecipes = useMemo(() => {
+  const sortedRecipes = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) {
-      return recipes;
-    }
-
-    return recipes.filter((recipe) => {
+    const filtered = query ? recipes.filter((recipe) => {
       const ingredientMatch = recipe.ingredients.some((ingredient) =>
         ingredient.food_name.toLowerCase().includes(query)
       );
       return recipe.name.toLowerCase().includes(query) || (recipe.category || "").toLowerCase().includes(query) || ingredientMatch;
-    });
-  }, [recipes, search]);
+    }) : recipes;
 
-  const visibleRecipes = paginate(filteredRecipes, page, MEALS_PER_PAGE);
+    return sortLibraryItems(filtered, sort, {
+      name: (recipe) => recipe.name,
+      createdAt: (recipe) => recipe.created_at,
+      protein: (recipe) => recipe.protein,
+      calories: (recipe) => recipe.calories
+    });
+  }, [recipes, search, sort]);
+
+  const visibleRecipes = paginate(sortedRecipes, page, MEALS_PER_PAGE);
   const editingRecipe = recipes.find((recipe) => recipe.id === editingRecipeId) || null;
 
   function setRecipeChecked(recipeId: string, checked: boolean) {
@@ -178,6 +183,13 @@ export function MealsPage({
               onChange={setSearch}
               placeholder="Search name, category, or ingredient"
             />
+            <SelectInput
+              className="sort-field"
+              label="Sort by"
+              value={sort}
+              options={librarySortOptions}
+              onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
+            />
             <div className="inline-actions">
               <Button
                 className="bulk-delete-action"
@@ -221,6 +233,7 @@ export function MealsPage({
           <div className="right-panel-stack">
           <RecipeForm
             recipe={recipeForm}
+            recipes={recipes}
             foods={foods}
             ingredientQueries={ingredientQueries}
             ingredientWeightTotal={ingredientWeightTotal}

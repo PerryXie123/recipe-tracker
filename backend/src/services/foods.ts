@@ -23,7 +23,7 @@ export function createFoodService({ supabaseConfigured, createSupabase }: FoodSe
     const food = parseFoodPayload(payload);
 
     if (!supabaseConfigured) {
-      const created = { ...food, id: `demo-food-${Date.now()}` };
+      const created = { ...food, id: `demo-food-${Date.now()}`, created_at: new Date().toISOString() };
       setDemoFoods([...demoFoods, created]);
       return created;
     }

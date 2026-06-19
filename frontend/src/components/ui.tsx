@@ -270,6 +270,43 @@ export function Badge({ children, className = "" }: { children: ReactNode; class
   return <span className={`badge ${className}`.trim()}>{children}</span>;
 }
 
+export function NameMatchResults({ query, names }: { query: string; names: string[] }) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (normalizedQuery.length < 2) {
+    return null;
+  }
+
+  const matches = names
+    .filter((name) => name.toLocaleLowerCase().includes(normalizedQuery))
+    .sort((first, second) => {
+      const firstName = first.toLocaleLowerCase();
+      const secondName = second.toLocaleLowerCase();
+      const firstRank = firstName === normalizedQuery ? 0 : firstName.startsWith(normalizedQuery) ? 1 : 2;
+      const secondRank = secondName === normalizedQuery ? 0 : secondName.startsWith(normalizedQuery) ? 1 : 2;
+      return firstRank - secondRank || first.localeCompare(second, undefined, { sensitivity: "base" });
+    })
+    .slice(0, 5);
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="name-match-results" role="status" aria-label="Existing name matches">
+      <small>Existing matches</small>
+      {matches.map((name, index) => {
+        const isExact = name.toLocaleLowerCase() === normalizedQuery;
+        return (
+          <span className={isExact ? "exact" : ""} key={`${name}-${index}`}>
+            <strong>{name}</strong>
+            {isExact ? <em>Exact match</em> : null}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ConfirmModal({
   title,
   body,

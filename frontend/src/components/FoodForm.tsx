@@ -1,11 +1,12 @@
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { formatUnitBasis } from "../lib/format";
-import type { NewFood } from "../types";
-import { Button, NumericInput, Panel, SegmentedControl, TextInput } from "./ui";
+import type { Food, NewFood } from "../types";
+import { Button, NameMatchResults, NumericInput, Panel, SegmentedControl, TextInput } from "./ui";
 
 type FoodFormProps = {
   food: NewFood;
+  foods: Food[];
   isEditing: boolean;
   isSaving: boolean;
   message: string;
@@ -19,6 +20,7 @@ type FoodFormProps = {
 
 export function FoodForm({
   food,
+  foods,
   isEditing,
   isSaving,
   message,
@@ -90,6 +92,7 @@ export function FoodForm({
         placeholder="Cottage cheese"
         required
       />
+      {!isEditing ? <NameMatchResults query={food.name} names={foods.map((item) => item.name)} /> : null}
 
       <div className="form-grid">
         <NumericInput

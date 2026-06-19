@@ -4,8 +4,9 @@ import { IconTrash } from "@tabler/icons-react";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
-import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, SelectInput, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
+import { librarySortOptions, sortLibraryItems, type LibrarySort } from "../lib/sorting";
 import type { Food, NewFood, Recipe } from "../types";
 
 const INGREDIENTS_PER_PAGE = 14;
@@ -48,6 +49,7 @@ export function IngredientsPage({
   editingFoodId
 }: IngredientsPageProps) {
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<LibrarySort>("name-asc");
   const [page, setPage] = useState(1);
   const [checkedFoodIds, setCheckedFoodIds] = useState<string[]>([]);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
@@ -57,7 +59,7 @@ export function IngredientsPage({
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, sort]);
 
   useEffect(() => {
     setCheckedFoodIds((currentIds) => currentIds.filter((foodId) => foods.some((food) => food.id === foodId)));
@@ -69,12 +71,18 @@ export function IngredientsPage({
     }
   }, [message]);
 
-  const filteredFoods = useMemo(() => {
+  const sortedFoods = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return query ? foods.filter((food) => food.name.toLowerCase().includes(query)) : foods;
-  }, [foods, search]);
+    const filtered = query ? foods.filter((food) => food.name.toLowerCase().includes(query)) : foods;
+    return sortLibraryItems(filtered, sort, {
+      name: (food) => food.name,
+      createdAt: (food) => food.created_at,
+      protein: (food) => food.protein_per_unit,
+      calories: (food) => food.calories_per_unit
+    });
+  }, [foods, search, sort]);
 
-  const visibleFoods = paginate(filteredFoods, page, INGREDIENTS_PER_PAGE);
+  const visibleFoods = paginate(sortedFoods, page, INGREDIENTS_PER_PAGE);
   const editingFood = foods.find((food) => food.id === editingFoodId) || null;
 
   function setFoodChecked(foodId: string, checked: boolean) {
@@ -154,6 +162,13 @@ export function IngredientsPage({
               onChange={setSearch}
               placeholder="Search by name"
             />
+            <SelectInput
+              className="sort-field"
+              label="Sort by"
+              value={sort}
+              options={librarySortOptions}
+              onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
+            />
             <div className="inline-actions">
               <Button
                 className="bulk-delete-action"
@@ -187,6 +202,7 @@ export function IngredientsPage({
         <MobileEditor open={isMobileEditorOpen} label={isEditing ? "Edit ingredient" : "Add ingredient"} onClose={closeMobileEditor}>
           <FoodForm
             food={foodForm}
+            foods={foods}
             isEditing={isEditing}
             isSaving={isSaving}
             message={message}

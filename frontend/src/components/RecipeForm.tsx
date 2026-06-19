@@ -1,12 +1,13 @@
 import type { FormEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IconMinus } from "@tabler/icons-react";
 import { formatNumber } from "../lib/format";
-import type { Food, NewRecipe } from "../types";
-import { Button, IconButton, NumericInput, Panel, SelectInput, TextInput } from "./ui";
+import type { Food, NewRecipe, Recipe } from "../types";
+import { Button, IconButton, NameMatchResults, NumericInput, Panel, SelectInput, TextInput } from "./ui";
 
 type RecipeFormProps = {
   recipe: NewRecipe;
+  recipes: Recipe[];
   foods: Food[];
   ingredientQueries: string[];
   ingredientWeightTotal: number;
@@ -31,6 +32,7 @@ const categoryOptions = ["Meal", "Breakfast", "Lunch", "Dinner", "Snack"].map((v
 
 export function RecipeForm({
   recipe,
+  recipes,
   foods,
   ingredientQueries,
   ingredientWeightTotal,
@@ -52,6 +54,25 @@ export function RecipeForm({
 }: RecipeFormProps) {
   const [activeIngredientIndex, setActiveIngredientIndex] = useState<number | null>(null);
   const autocompleteRef = useRef<HTMLDivElement | null>(null);
+  const runningTotals = useMemo(() => {
+    return recipe.ingredients.reduce(
+      (totals, ingredient) => {
+        const food = foods.find((item) => item.id === ingredient.food_id);
+        if (!food) {
+          return totals;
+        }
+
+        const unitWeight = Number(food.unit_weight_g || 0);
+        const basisWeight = food.unit_label === "100g" ? 100 : unitWeight > 0 ? unitWeight : 100;
+        const multiplier = Number(ingredient.weight_g || 0) / basisWeight;
+        return {
+          calories: totals.calories + Number(food.calories_per_unit || 0) * multiplier,
+          protein: totals.protein + Number(food.protein_per_unit || 0) * multiplier
+        };
+      },
+      { calories: 0, protein: 0 }
+    );
+  }, [foods, recipe.ingredients]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -89,6 +110,7 @@ export function RecipeForm({
         placeholder="Chicken rice bowl"
         required
       />
+      {!isEditing ? <NameMatchResults query={recipe.name} names={recipes.map((item) => item.name)} /> : null}
 
       <SelectInput
         label="Category"
@@ -111,6 +133,17 @@ export function RecipeForm({
         </Button>
       </div>
       <p className="form-message">Ingredient weight total: {formatNumber(ingredientWeightTotal)}g</p>
+
+      <div className="meal-running-totals" aria-live="polite" aria-label="Running meal nutrition totals">
+        <div>
+          <span>Calories</span>
+          <strong>{formatNumber(runningTotals.calories)} cal</strong>
+        </div>
+        <div>
+          <span>Protein</span>
+          <strong>{formatNumber(runningTotals.protein)}g</strong>
+        </div>
+      </div>
 
       <div className="builder-list" ref={autocompleteRef}>
         {recipe.ingredients.map((ingredient, index) => {

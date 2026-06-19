@@ -1,6 +1,7 @@
 export type Food = {
   id: string;
   name: string;
+  created_at?: string | null;
   calories_per_unit: number;
   kj_per_unit: number;
   protein_per_unit: number;
