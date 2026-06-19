@@ -26,7 +26,11 @@ export function CalorieTargetCard({ calories, target, title, subtitle }: Calorie
           <span />
         </div>
         <p className="strong mt-8">
-          {target ? `${formatNumber(Math.abs(remaining || 0))} cal ${remaining && remaining < 0 ? "over" : "remaining"}` : "Set a TDEE target"}
+          {target
+            ? remaining !== null && remaining < 0
+              ? `${formatNumber(Math.abs(remaining))} cal over the ${formatNumber(target)} cal limit`
+              : `${formatNumber(remaining || 0)} cal remaining out of the ${formatNumber(target)} cal limit`
+            : "Set a TDEE target"}
         </p>
       </div>
     </div>

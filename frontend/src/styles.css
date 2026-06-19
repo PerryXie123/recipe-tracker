@@ -273,7 +273,8 @@ th {
 }
 
 .menu-toggle,
-.nav-backdrop {
+.nav-backdrop,
+.mobile-header-brand {
   display: none;
 }
 
@@ -1779,12 +1780,46 @@ th {
 
 .calendar-meal-pill {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(108px, 136px) 42px;
+  grid-template-columns: 30px minmax(0, 1fr) minmax(108px, 136px) 42px;
   gap: 8px;
   align-items: center;
   padding: 6px 8px;
   background: var(--green-soft);
   border-radius: 14px;
+}
+
+.draggable-calendar-meal {
+  position: relative;
+  z-index: 1;
+}
+
+.draggable-calendar-meal.react-draggable-dragging {
+  z-index: 50;
+  filter: drop-shadow(0 14px 18px rgba(25, 28, 26, .2));
+}
+
+.today-planner:has(.react-draggable-dragging) .today-slot {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--line));
+}
+
+.calendar-meal-drag-handle {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 42px;
+  color: var(--muted);
+  border-radius: 9px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.calendar-meal-drag-handle:hover {
+  color: var(--green-dark);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+}
+
+.calendar-meal-drag-handle:active {
+  cursor: grabbing;
 }
 
 .calendar-meal-pill button,
@@ -1982,12 +2017,13 @@ th {
   .app-frame {
     display: block;
     min-height: 100vh;
+    overflow: visible;
     border: 0;
     border-radius: 0;
   }
 
   .app-main {
-    padding: 14px 14px calc(96px + env(safe-area-inset-bottom));
+    padding: calc(76px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom));
   }
 
   .sidebar {
@@ -2027,6 +2063,27 @@ th {
 
   .menu-toggle {
     display: grid;
+  }
+
+  .mobile-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .mobile-header-brand .brand-mark {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .mobile-header-brand strong {
+    font-size: 15px;
   }
 
   .mobile-bottom-nav {
@@ -2157,12 +2214,16 @@ th {
   }
 
   .topbar {
-    position: sticky;
-    z-index: 30;
+    position: fixed;
+    z-index: 65;
     top: 0;
-    margin: -14px -14px 0;
-    padding: 12px 14px;
+    right: 0;
+    left: 0;
+    min-height: calc(64px + env(safe-area-inset-top));
+    margin: 0;
+    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
     background: color-mix(in srgb, var(--frame-bg) 92%, transparent);
+    border-bottom: 1px solid var(--line);
     backdrop-filter: blur(14px);
   }
 
@@ -2228,9 +2289,14 @@ th {
   }
 
   .calendar-meal-pill {
-    grid-template-columns: minmax(0, 1fr) minmax(90px, 118px) 34px;
+    grid-template-columns: 26px minmax(0, 1fr) minmax(82px, 108px) 34px;
     gap: 6px;
     padding: 6px;
+  }
+
+  .calendar-meal-drag-handle {
+    width: 26px;
+    height: 38px;
   }
 
   .calendar-meal-pill button {

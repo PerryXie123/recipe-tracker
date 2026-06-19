@@ -153,6 +153,10 @@ export function Layout({
             >
               {isNavOpen ? <IconX size={18} /> : <IconMenu2 size={18} />}
             </IconButton>
+            <button className="mobile-header-brand" type="button" onClick={() => handleNavigate("home")}>
+              <span className="brand-mark">P</span>
+              <strong>Plateful</strong>
+            </button>
             <div className="topbar-actions">
               <IconButton
                 label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}

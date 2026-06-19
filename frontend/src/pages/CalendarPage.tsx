@@ -1,6 +1,7 @@
-import type { TouchEvent } from "react";
-import { useState } from "react";
-import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
+import type { ReactNode, TouchEvent } from "react";
+import { useRef, useState } from "react";
+import Draggable from "react-draggable";
+import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconGripVertical, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
 import { Button, IconButton, MobileEditor, MobileFab, NumericInput, Panel, SegmentedControl, SelectInput, TextInput } from "../components/ui";
 import {
@@ -102,12 +103,37 @@ export function CalendarPage({
     });
   }
 
+  function moveRecipe(dateKey: string, fromSlot: MealSlot, index: number, toSlot: MealSlot) {
+    if (fromSlot === toSlot) {
+      return;
+    }
+
+    const dayPlan = mealPlan[dateKey] || {};
+    const sourceMeals = [...(dayPlan[fromSlot] || [])];
+    const [movedMeal] = sourceMeals.splice(index, 1);
+    if (!movedMeal) {
+      return;
+    }
+
+    onMealPlanChange({
+      ...mealPlan,
+      [dateKey]: {
+        ...dayPlan,
+        [fromSlot]: sourceMeals,
+        [toSlot]: [...(dayPlan[toSlot] || []), movedMeal]
+      }
+    });
+  }
+
   function handlePlannerTouchStart(event: TouchEvent<HTMLElement>) {
     if (event.touches.length !== 1) {
       return;
     }
 
-    if (event.target instanceof Element && event.target.closest("button, input, [role='button']")) {
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, input, [role='button'], .calendar-meal-drag-handle")
+    ) {
       setTouchStartX(null);
       return;
     }
@@ -190,7 +216,7 @@ export function CalendarPage({
                 {mealSlots.map((slot) => {
                   const plannedMeals = selectedDayPlan[slot.id] || [];
                   return (
-                    <div className="calendar-slot-group today-slot" key={slot.id}>
+                    <div className="calendar-slot-group today-slot" data-calendar-slot={slot.id} key={slot.id}>
                       <span className="muted strong">{slot.label}</span>
                       <div className="list-stack">
                         {plannedMeals.map((entry, index) => {
@@ -206,7 +232,24 @@ export function CalendarPage({
                           const portionProtein = getRecipePortionValue(recipe.protein, totalWeight, portion);
 
                           return (
-                            <div className="calendar-meal-pill large" key={`${recipeId}-${index}`}>
+                            <DraggableMeal
+                              key={`${recipeId}-${index}`}
+                              onDrop={(clientX, clientY) => {
+                                const target = Array.from(
+                                  document.querySelectorAll<HTMLElement>("[data-calendar-slot]")
+                                ).find((element) => {
+                                  const bounds = element.getBoundingClientRect();
+                                  return clientX >= bounds.left && clientX <= bounds.right && clientY >= bounds.top && clientY <= bounds.bottom;
+                                })?.dataset.calendarSlot as MealSlot | undefined;
+                                if (target) {
+                                  moveRecipe(selectedDateKey, slot.id, index, target);
+                                }
+                              }}
+                            >
+                              <div className="calendar-meal-pill large">
+                              <span className="calendar-meal-drag-handle" aria-label={`Move ${recipe.name}`} title="Drag to another meal slot">
+                                <IconGripVertical aria-hidden="true" size={18} />
+                              </span>
                               <button type="button" onClick={() => onEditRecipe(recipe)}>
                                 <span>{recipe.name}</span>
                                 <small>{formatNumber(portionCalories)} cal - {formatNumber(portionProtein)}g protein</small>
@@ -226,7 +269,8 @@ export function CalendarPage({
                               >
                                 <IconX size={14} />
                               </IconButton>
-                            </div>
+                              </div>
+                            </DraggableMeal>
                           );
                         })}
                       </div>
@@ -328,6 +372,25 @@ export function CalendarPage({
         </Panel>
       </MobileEditor>
     </section>
+  );
+}
+
+function DraggableMeal({ children, onDrop }: { children: ReactNode; onDrop: (clientX: number, clientY: number) => void }) {
+  const nodeRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <Draggable
+      nodeRef={nodeRef}
+      handle=".calendar-meal-drag-handle"
+      position={{ x: 0, y: 0 }}
+      onStop={(event) => {
+        const touchEvent = event as unknown as globalThis.TouchEvent;
+        const point = touchEvent.changedTouches?.[0] || (event as MouseEvent);
+        onDrop(point.clientX, point.clientY);
+      }}
+    >
+      <div className="draggable-calendar-meal" ref={nodeRef}>{children}</div>
+    </Draggable>
   );
 }
 

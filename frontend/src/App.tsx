@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
 import { useRecipeTracker } from "./hooks/useRecipeTracker";
@@ -73,6 +73,8 @@ function getLocalUserState(userEmail?: string | null) {
 
 export function App() {
   const [route, setRoute] = useState<Route>(() => getRouteFromPath(window.location.pathname));
+  const routeRef = useRef(route);
+  const scrollPositionsRef = useRef<Partial<Record<Route, number>>>({});
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
@@ -82,12 +84,34 @@ export function App() {
   const auth = useAuth();
 
   function navigate(nextRoute: Route) {
+    if (nextRoute === routeRef.current) {
+      return;
+    }
+
+    scrollPositionsRef.current[routeRef.current] = window.scrollY;
     const nextPath = getPathForRoute(nextRoute);
     window.history.pushState(null, "", nextPath);
+    routeRef.current = nextRoute;
     setRoute(nextRoute);
   }
 
   const tracker = useRecipeTracker((nextRoute) => navigate(nextRoute), auth.accessToken);
+
+  useLayoutEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollPositionsRef.current[route] || 0, behavior: "auto" });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [route]);
+
+  useEffect(() => {
+    const previousRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => {
+      window.history.scrollRestoration = previousRestoration;
+    };
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -184,7 +208,10 @@ export function App() {
 
   useEffect(() => {
     function handlePopState() {
-      setRoute(getRouteFromPath(window.location.pathname));
+      scrollPositionsRef.current[routeRef.current] = window.scrollY;
+      const nextRoute = getRouteFromPath(window.location.pathname);
+      routeRef.current = nextRoute;
+      setRoute(nextRoute);
     }
 
     window.addEventListener("popstate", handlePopState);
