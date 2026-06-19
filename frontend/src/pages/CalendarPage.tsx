@@ -1,6 +1,6 @@
 import type { TouchEvent } from "react";
 import { useState } from "react";
-import { IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
+import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
 import { Button, IconButton, MobileEditor, MobileFab, NumericInput, Panel, SegmentedControl, SelectInput, TextInput } from "../components/ui";
 import {
@@ -130,6 +130,16 @@ export function CalendarPage({
     setSelectedDate(addDays(selectedDate, deltaX > 0 ? -1 : 1));
   }
 
+  function handleDatePick(value: string) {
+    const [year, month, day] = value.split("-").map(Number);
+    if (!year || !month || !day) {
+      return;
+    }
+
+    setSelectedDate(new Date(year, month - 1, day));
+    setView("today");
+  }
+
   return (
     <section className="page-stack">
       <section className="calendar-shell">
@@ -170,6 +180,7 @@ export function CalendarPage({
                 <Button variant="secondary" size="sm" type="button" onClick={() => setSelectedDate(new Date())}>
                   Today
                 </Button>
+                <DatePickerButton value={selectedDateKey} onChange={handleDatePick} />
                 <IconButton label="Next day" onClick={() => setSelectedDate(addDays(selectedDate, 1))}>
                   <IconChevronRight size={18} />
                 </IconButton>
@@ -237,6 +248,7 @@ export function CalendarPage({
                 <Button variant="secondary" size="sm" type="button" onClick={() => setWeekOffset(0)}>
                   This week
                 </Button>
+                <DatePickerButton value={selectedDateKey} onChange={handleDatePick} />
                 <IconButton label="Next week" onClick={() => setWeekOffset(weekOffset + 1)}>
                   <IconChevronRight size={18} />
                 </IconButton>
@@ -316,6 +328,21 @@ export function CalendarPage({
         </Panel>
       </MobileEditor>
     </section>
+  );
+}
+
+function DatePickerButton({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="date-picker-button">
+      <IconCalendarEvent aria-hidden="true" size={18} />
+      <span>Pick date</span>
+      <input
+        type="date"
+        value={value}
+        aria-label="Pick a calendar date"
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
   );
 }
 
