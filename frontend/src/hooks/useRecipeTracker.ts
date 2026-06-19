@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createFood,
   createRecipe,
@@ -55,10 +55,25 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   const [ingredientQueries, setIngredientQueries] = useState<string[]>([""]);
   const [portionWeights, setPortionWeights] = useState<Record<string, number>>({});
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<string[]>(getInitialFavoriteRecipeIds);
+  const pendingFavoriteIdsRef = useRef(new Set<string>());
   const [message, setMessage] = useState("Loading recipe tracker...");
   const [recipeMessage, setRecipeMessage] = useState("");
   const [isSavingFood, setIsSavingFood] = useState(false);
   const [isSavingRecipe, setIsSavingRecipe] = useState(false);
+
+  function applyRemoteFavoriteIds(remoteIds: string[]) {
+    setFavoriteRecipeIds((currentIds) => {
+      const nextIds = new Set(remoteIds);
+      pendingFavoriteIdsRef.current.forEach((recipeId) => {
+        if (currentIds.includes(recipeId)) {
+          nextIds.add(recipeId);
+        } else {
+          nextIds.delete(recipeId);
+        }
+      });
+      return [...nextIds];
+    });
+  }
 
   async function refresh() {
     const [nextFoods, nextRecipes] = await Promise.all([getFoods(), getRecipes()]);
@@ -142,7 +157,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
         }
 
         if (isMounted) {
-          setFavoriteRecipeIds(remoteIds);
+          applyRemoteFavoriteIds(remoteIds);
         }
 
         channel = supabaseClient
@@ -154,7 +169,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
               void loadFavoriteIds()
                 .then((ids) => {
                   if (isMounted) {
-                    setFavoriteRecipeIds(ids);
+                    applyRemoteFavoriteIds(ids);
                   }
                 })
                 .catch((error) => console.error("Could not refresh favourites from the database", error));
@@ -177,7 +192,9 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   }, [accessToken]);
 
   useEffect(() => {
-    setFavoriteRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
+    if (recipes.length > 0) {
+      setFavoriteRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
+    }
   }, [recipes]);
 
   const mealTotals = useMemo(() => {
@@ -456,7 +473,12 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   }
 
   function toggleFavoriteRecipe(recipeId: string) {
+    if (pendingFavoriteIdsRef.current.has(recipeId)) {
+      return;
+    }
+
     const wasFavorite = favoriteRecipeIds.includes(recipeId);
+    pendingFavoriteIdsRef.current.add(recipeId);
     setFavoriteRecipeIds(
       wasFavorite
         ? favoriteRecipeIds.filter((currentId) => currentId !== recipeId)
@@ -478,7 +500,9 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
         if (result.error) {
           throw result.error;
         }
+        pendingFavoriteIdsRef.current.delete(recipeId);
       }).catch((error) => {
+        pendingFavoriteIdsRef.current.delete(recipeId);
         console.error("Could not sync favourite to the database", error);
         setFavoriteRecipeIds((currentIds) =>
           wasFavorite
@@ -486,6 +510,8 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
             : currentIds.filter((currentId) => currentId !== recipeId)
         );
       });
+    } else {
+      pendingFavoriteIdsRef.current.delete(recipeId);
     }
   }
 
