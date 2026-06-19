@@ -2,7 +2,7 @@ import type { TouchEvent } from "react";
 import { useState } from "react";
 import { IconChevronLeft, IconChevronRight, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
-import { Button, IconButton, NumericInput, Panel, SegmentedControl, TextInput } from "../components/ui";
+import { Button, IconButton, MobileEditor, MobileFab, NumericInput, Panel, SegmentedControl, SelectInput, TextInput } from "../components/ui";
 import {
   addDays,
   getMonday,
@@ -39,6 +39,8 @@ export function CalendarPage({
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [isMobileAddOpen, setIsMobileAddOpen] = useState(false);
+  const [mobileSlot, setMobileSlot] = useState<MealSlot>("breakfast");
   const selectedDateKey = toDateKey(selectedDate);
   const selectedDayPlan = mealPlan[selectedDateKey] || {};
   const weekStart = addDays(getMonday(new Date()), weekOffset * 7);
@@ -290,6 +292,29 @@ export function CalendarPage({
         </Panel>
 
       </section>
+      <MobileFab label="Add meal to calendar" onClick={() => setIsMobileAddOpen(true)} />
+      <MobileEditor
+        open={isMobileAddOpen}
+        label={`Add to ${dayFormatter.format(selectedDate)}, ${dateFormatter.format(selectedDate)}`}
+        mobileOnly
+        onClose={() => setIsMobileAddOpen(false)}
+      >
+        <Panel className="mobile-calendar-add-panel">
+          <SelectInput
+            label="Meal slot"
+            value={mobileSlot}
+            options={mealSlots.map((slot) => ({ value: slot.id, label: slot.label }))}
+            onChange={(value) => setMobileSlot((value || "breakfast") as MealSlot)}
+          />
+          <CalendarMealSearch
+            recipes={recipes}
+            onAdd={(recipeId) => {
+              addRecipe(selectedDateKey, mobileSlot, recipeId);
+              setIsMobileAddOpen(false);
+            }}
+          />
+        </Panel>
+      </MobileEditor>
     </section>
   );
 }

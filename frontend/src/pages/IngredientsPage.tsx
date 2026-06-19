@@ -1,9 +1,10 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { IconTrash } from "@tabler/icons-react";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
-import { Button, ConfirmModal, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewFood, Recipe } from "../types";
 
@@ -49,8 +50,10 @@ export function IngredientsPage({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [checkedFoodIds, setCheckedFoodIds] = useState<string[]>([]);
-  const [isConfirmingBulkDelete, setIsConfirmingBulkDelete] = useState(false);
-  const [foodPendingDelete, setFoodPendingDelete] = useState<Food | null>(null);
+  const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
+  const [deleteRequest, setDeleteRequest] = useState<
+    { type: "single"; food: Food } | { type: "bulk"; foodIds: string[] } | null
+  >(null);
 
   useEffect(() => {
     setPage(1);
@@ -59,12 +62,6 @@ export function IngredientsPage({
   useEffect(() => {
     setCheckedFoodIds((currentIds) => currentIds.filter((foodId) => foods.some((food) => food.id === foodId)));
   }, [foods]);
-
-  useEffect(() => {
-    if (checkedFoodIds.length === 0) {
-      setIsConfirmingBulkDelete(false);
-    }
-  }, [checkedFoodIds.length]);
 
   const filteredFoods = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -85,34 +82,47 @@ export function IngredientsPage({
   }
 
   function handleBulkDelete() {
-    if (!isConfirmingBulkDelete) {
-      setIsConfirmingBulkDelete(true);
-      return;
-    }
-
-    onBulkDelete(checkedFoodIds);
-    setCheckedFoodIds([]);
-    setIsConfirmingBulkDelete(false);
+    setDeleteRequest({ type: "bulk", foodIds: checkedFoodIds });
   }
 
   function requestDeleteFood(food: Food) {
-    const affectedRecipes = getRecipesUsingFood(food, recipes);
-    if (affectedRecipes.length === 0) {
-      onDelete(food);
+    setDeleteRequest({ type: "single", food });
+  }
+
+  function openNewIngredient() {
+    onCancel();
+    setIsMobileEditorOpen(true);
+  }
+
+  function editIngredient(food: Food) {
+    onEdit(food);
+    setIsMobileEditorOpen(true);
+  }
+
+  function closeMobileEditor() {
+    onCancel();
+    setIsMobileEditorOpen(false);
+  }
+
+  function confirmDeleteIngredients() {
+    if (!deleteRequest) {
       return;
     }
 
-    setFoodPendingDelete(food);
-  }
-
-  function confirmDeleteFoodWithReferences() {
-    if (!foodPendingDelete) {
-      return;
+    if (deleteRequest.type === "bulk") {
+      onBulkDelete(deleteRequest.foodIds);
+      setCheckedFoodIds([]);
+    } else if (getRecipesUsingFood(deleteRequest.food, recipes).length > 0) {
+      onDeleteWithReferences(deleteRequest.food);
+    } else {
+      onDelete(deleteRequest.food);
     }
 
-    onDeleteWithReferences(foodPendingDelete);
-    setFoodPendingDelete(null);
+    setDeleteRequest(null);
   }
+
+  const deleteCount = deleteRequest?.type === "bulk" ? deleteRequest.foodIds.length : deleteRequest ? 1 : 0;
+  const affectedRecipes = deleteRequest?.type === "single" ? getRecipesUsingFood(deleteRequest.food, recipes) : [];
 
   function handlePagePointerDown(event: PointerEvent<HTMLElement>) {
     if (!isEditing || !(event.target instanceof Element)) {
@@ -139,25 +149,16 @@ export function IngredientsPage({
               placeholder="Search by name"
             />
             <div className="inline-actions">
-              {isConfirmingBulkDelete ? (
-                <>
-                  <Button variant="danger" type="button" onClick={handleBulkDelete}>
-                    Confirm
-                  </Button>
-                  <Button variant="secondary" type="button" onClick={() => setIsConfirmingBulkDelete(false)}>
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="danger"
-                  type="button"
-                  disabled={checkedFoodIds.length === 0}
-                  onClick={handleBulkDelete}
-                >
-                  Delete selected
-                </Button>
-              )}
+              <Button
+                className="bulk-delete-action"
+                variant="danger"
+                type="button"
+                disabled={checkedFoodIds.length === 0}
+                onClick={handleBulkDelete}
+              >
+                <IconTrash aria-hidden="true" size={17} />
+                <span>Delete selected</span>
+              </Button>
             </div>
           </div>
 
@@ -165,7 +166,7 @@ export function IngredientsPage({
             foods={visibleFoods.items}
             selectedFoodId={editingFoodId}
             checkedFoodIds={checkedFoodIds}
-            onSelect={onEdit}
+            onSelect={editIngredient}
             onCheckedChange={setFoodChecked}
           />
 
@@ -177,36 +178,42 @@ export function IngredientsPage({
           />
         </Panel>
 
-        <FoodForm
-          food={foodForm}
-          isEditing={isEditing}
-          isSaving={isSaving}
-          message={message}
-          onChange={onFoodChange}
-          onCaloriesChange={onCaloriesChange}
-          onKjChange={onKjChange}
-          onSubmit={onSubmit}
-          onCancel={onCancel}
+        <MobileEditor open={isMobileEditorOpen} label={isEditing ? "Edit ingredient" : "Add ingredient"} onClose={closeMobileEditor}>
+          <FoodForm
+            food={foodForm}
+            isEditing={isEditing}
+            isSaving={isSaving}
+            message={message}
+            onChange={onFoodChange}
+            onCaloriesChange={onCaloriesChange}
+            onKjChange={onKjChange}
+            onSubmit={onSubmit}
+            onCancel={closeMobileEditor}
             onDelete={editingFood ? () => requestDeleteFood(editingFood) : undefined}
-        />
+          />
+        </MobileEditor>
       </section>
-      {foodPendingDelete ? (
+      <MobileFab label="Add ingredient" onClick={openNewIngredient} />
+      {deleteRequest ? (
         <ConfirmModal
-          title={`Delete ${foodPendingDelete.name}?`}
-          confirmLabel="Delete ingredient"
-          onCancel={() => setFoodPendingDelete(null)}
-          onConfirm={confirmDeleteFoodWithReferences}
+          title={`Delete ${deleteCount} ingredient${deleteCount === 1 ? "" : "s"}?`}
+          confirmLabel={deleteCount === 1 ? "Delete ingredient" : "Delete ingredients"}
+          onCancel={() => setDeleteRequest(null)}
+          onConfirm={confirmDeleteIngredients}
           body={
             <>
               <p>
-                This ingredient is used in these meals. Deleting it will also remove it from those meals and keep the
-                rest of each meal unchanged.
+                {affectedRecipes.length > 0
+                  ? "This ingredient is used in the meals below. Deleting it will also remove it from those meals."
+                  : `This will permanently delete the selected ingredient${deleteCount === 1 ? "" : "s"} from your library.`}
               </p>
-              <div className="confirm-modal-list">
-                {getRecipesUsingFood(foodPendingDelete, recipes).map((recipe) => (
-                  <span key={recipe.id}>{recipe.name}</span>
-                ))}
-              </div>
+              {affectedRecipes.length > 0 ? (
+                <div className="confirm-modal-list">
+                  {affectedRecipes.map((recipe) => (
+                    <span key={recipe.id}>{recipe.name}</span>
+                  ))}
+                </div>
+              ) : null}
             </>
           }
         />

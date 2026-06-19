@@ -7,6 +7,7 @@ import { createSupabaseClient } from "./lib/supabase.js";
 import { createApiHandler } from "./routes/api.js";
 import { createFoodService } from "./services/foods.js";
 import { createRecipeService } from "./services/recipes.js";
+import { createUserStateService } from "./services/userState.js";
 
 const rootDir = fileURLToPath(new URL(".", import.meta.url));
 
@@ -24,7 +25,8 @@ const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
 const handleApi = createApiHandler({
   supabaseConfigured: supabase.configured,
   foods: createFoodService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request }),
-  recipes: createRecipeService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request })
+  recipes: createRecipeService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request }),
+  userState: createUserStateService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request })
 });
 
 createServer(async (request, response) => {

@@ -1,5 +1,5 @@
 import type { ElementType, MouseEvent, ReactNode } from "react";
-import { IconChevronDown } from "@tabler/icons-react";
+import { IconChevronDown, IconPlus, IconX } from "@tabler/icons-react";
 import {
   Button as AriaButton,
   Checkbox as AriaCheckbox,
@@ -76,6 +76,48 @@ export function IconButton({
     >
       {children}
     </AriaButton>
+  );
+}
+
+export function MobileFab({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <AriaButton className="mobile-fab" aria-label={label} type="button" onPress={onClick}>
+      <IconPlus aria-hidden="true" size={28} strokeWidth={2.5} />
+    </AriaButton>
+  );
+}
+
+export function MobileEditor({
+  open,
+  label,
+  mobileOnly = false,
+  onClose,
+  children
+}: {
+  open: boolean;
+  label: string;
+  mobileOnly?: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`mobile-editor-slot${open ? " open" : ""}${mobileOnly ? " mobile-only" : ""}`}
+      role={open ? "dialog" : undefined}
+      aria-modal={open ? "true" : undefined}
+      aria-label={open ? label : undefined}
+    >
+      <button className="mobile-editor-backdrop" type="button" aria-label={`Close ${label}`} onClick={onClose} />
+      <div className="mobile-editor-sheet">
+        <div className="mobile-editor-toolbar">
+          <strong>{label}</strong>
+          <IconButton label={`Close ${label}`} variant="secondary" onClick={onClose}>
+            <IconX size={18} />
+          </IconButton>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 

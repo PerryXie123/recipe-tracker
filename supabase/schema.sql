@@ -96,9 +96,29 @@ create table if not exists public.recipe_ingredients (
   sort_order integer not null default 0
 );
 
+create table if not exists public.user_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  tdee_target numeric check (tdee_target is null or tdee_target >= 0),
+  protein_target numeric check (protein_target is null or protein_target >= 0),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.planned_meals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  plan_date date not null,
+  meal_slot text not null,
+  recipe_id uuid not null references public.recipes(id) on delete cascade,
+  portion_g numeric not null check (portion_g >= 0),
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
 alter table public.foods enable row level security;
 alter table public.recipes enable row level security;
 alter table public.recipe_ingredients enable row level security;
+alter table public.user_settings enable row level security;
+alter table public.planned_meals enable row level security;
 
 drop policy if exists "Service role manages foods" on public.foods;
 drop policy if exists "Service role manages recipes" on public.recipes;
@@ -109,6 +129,8 @@ drop policy if exists "Users read their recipe ingredients" on public.recipe_ing
 drop policy if exists "Users insert their recipe ingredients" on public.recipe_ingredients;
 drop policy if exists "Users update their recipe ingredients" on public.recipe_ingredients;
 drop policy if exists "Users delete their recipe ingredients" on public.recipe_ingredients;
+drop policy if exists "Users manage their settings" on public.user_settings;
+drop policy if exists "Users manage their planned meals" on public.planned_meals;
 
 create policy "Users manage their foods" on public.foods
   for all
@@ -186,6 +208,26 @@ create policy "Users delete their recipe ingredients" on public.recipe_ingredien
       select 1
       from public.recipes
       where recipes.id = recipe_ingredients.recipe_id
+        and recipes.user_id = (select auth.uid())
+    )
+  );
+
+create policy "Users manage their settings" on public.user_settings
+  for all
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users manage their planned meals" on public.planned_meals
+  for all
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check (
+    (select auth.uid()) = user_id
+    and exists (
+      select 1
+      from public.recipes
+      where recipes.id = planned_meals.recipe_id
         and recipes.user_id = (select auth.uid())
     )
   );

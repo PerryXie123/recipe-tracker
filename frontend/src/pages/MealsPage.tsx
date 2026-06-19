@@ -1,9 +1,10 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { IconTrash } from "@tabler/icons-react";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
-import { Button, ConfirmModal, Panel, TextInput } from "../components/ui";
+import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
 import type { Food, NewRecipe, Recipe } from "../types";
 
@@ -73,6 +74,7 @@ export function MealsPage({
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
+  const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const [deleteRequest, setDeleteRequest] = useState<{ type: "single"; recipe: Recipe } | { type: "bulk"; recipeIds: string[] } | null>(null);
 
   useEffect(() => {
@@ -112,6 +114,21 @@ export function MealsPage({
 
   function handleBulkDelete() {
     setDeleteRequest({ type: "bulk", recipeIds: checkedRecipeIds });
+  }
+
+  function openNewMeal() {
+    onCancel();
+    setIsMobileEditorOpen(true);
+  }
+
+  function editMeal(recipe: Recipe) {
+    onEdit(recipe);
+    setIsMobileEditorOpen(true);
+  }
+
+  function closeMobileEditor() {
+    onCancel();
+    setIsMobileEditorOpen(false);
   }
 
   function confirmDeleteMeals() {
@@ -157,12 +174,14 @@ export function MealsPage({
             />
             <div className="inline-actions">
               <Button
+                className="bulk-delete-action"
                 variant="danger"
                 type="button"
                 disabled={checkedRecipeIds.length === 0}
                 onClick={handleBulkDelete}
               >
-                Delete selected
+                <IconTrash aria-hidden="true" size={17} />
+                <span>Delete selected</span>
               </Button>
             </div>
           </div>
@@ -175,7 +194,7 @@ export function MealsPage({
                 checked={checkedRecipeIds.includes(recipe.id)}
                 isFavorite={favoriteRecipeIds.includes(recipe.id)}
                 portionTotals={getPortionTotals(recipe)}
-                onSelect={onEdit}
+                onSelect={editMeal}
                 onCheckedChange={(checked) => setRecipeChecked(recipe.id, checked)}
                 onPortionChange={(weight) => onPortionWeightsChange({ ...portionWeights, [recipe.id]: weight })}
                 onFavoriteToggle={() => onFavoriteToggle(recipe.id)}
@@ -192,7 +211,8 @@ export function MealsPage({
           />
         </Panel>
 
-        <div className="right-panel-stack">
+        <MobileEditor open={isMobileEditorOpen} label={isEditing ? "Edit meal" : "Add meal"} onClose={closeMobileEditor}>
+          <div className="right-panel-stack">
           <RecipeForm
             recipe={recipeForm}
             foods={foods}
@@ -203,7 +223,7 @@ export function MealsPage({
             message={message}
             onChange={onRecipeChange}
             onSubmit={onSubmit}
-            onCancel={onCancel}
+            onCancel={closeMobileEditor}
             onManualWeightChange={onManualWeightChange}
             onRegenerateWeight={onRegenerateWeight}
             onIngredientQueryChange={onIngredientQueryChange}
@@ -214,8 +234,10 @@ export function MealsPage({
             onRemoveIngredient={onRemoveIngredient}
             onDelete={editingRecipe ? () => setDeleteRequest({ type: "single", recipe: editingRecipe }) : undefined}
           />
-        </div>
+          </div>
+        </MobileEditor>
       </section>
+      <MobileFab label="Add meal" onClick={openNewMeal} />
       {deleteRequest ? (
         <ConfirmModal
           title={`Delete ${deleteCount} meal${deleteCount === 1 ? "" : "s"}?`}

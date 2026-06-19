@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Layout } from "./components/Layout";
 import { useAuth } from "./hooks/useAuth";
 import { useRecipeTracker } from "./hooks/useRecipeTracker";
+import { getUserState, saveUserState } from "./api";
 import { getPathForRoute, getRouteFromPath, type Route } from "./lib/routing";
 import type { MealPlan } from "./lib/planning";
 import { HomePage } from "./pages/HomePage";
@@ -50,6 +51,26 @@ function getStoredValue(baseKey: string, userEmail?: string | null) {
   return window.localStorage.getItem(getStorageKey(baseKey, userEmail)) || window.localStorage.getItem(baseKey);
 }
 
+function getLocalUserState(userEmail?: string | null) {
+  const savedTdeeTarget = Number(getStoredValue(TDEE_TARGET_STORAGE_KEY, userEmail));
+  const savedProteinTarget = Number(getStoredValue(PROTEIN_TARGET_STORAGE_KEY, userEmail));
+  const savedPlan = getStoredValue(MEAL_PLAN_STORAGE_KEY, userEmail);
+
+  try {
+    return {
+      tdeeTarget: Number.isFinite(savedTdeeTarget) && savedTdeeTarget > 0 ? savedTdeeTarget : null,
+      proteinTarget: Number.isFinite(savedProteinTarget) && savedProteinTarget > 0 ? savedProteinTarget : null,
+      mealPlan: savedPlan ? (JSON.parse(savedPlan) as MealPlan) : {}
+    };
+  } catch {
+    return {
+      tdeeTarget: Number.isFinite(savedTdeeTarget) && savedTdeeTarget > 0 ? savedTdeeTarget : null,
+      proteinTarget: Number.isFinite(savedProteinTarget) && savedProteinTarget > 0 ? savedProteinTarget : null,
+      mealPlan: {}
+    };
+  }
+}
+
 export function App() {
   const [route, setRoute] = useState<Route>(() => getRouteFromPath(window.location.pathname));
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -57,6 +78,7 @@ export function App() {
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
   const [loadedStorageUser, setLoadedStorageUser] = useState<string | null>(null);
+  const [isRemoteStateLoaded, setIsRemoteStateLoaded] = useState(false);
   const auth = useAuth();
 
   function navigate(nextRoute: Route) {
@@ -73,23 +95,48 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!auth.userEmail) {
+    if (!auth.userEmail || !auth.accessToken) {
+      setIsRemoteStateLoaded(false);
       return;
     }
 
-    const savedTdeeTarget = Number(getStoredValue(TDEE_TARGET_STORAGE_KEY, auth.userEmail));
-    const savedProteinTarget = Number(getStoredValue(PROTEIN_TARGET_STORAGE_KEY, auth.userEmail));
-    const savedPlan = getStoredValue(MEAL_PLAN_STORAGE_KEY, auth.userEmail);
-
-    setCurrentTdeeTarget(Number.isFinite(savedTdeeTarget) && savedTdeeTarget > 0 ? savedTdeeTarget : null);
-    setCurrentProteinTarget(Number.isFinite(savedProteinTarget) && savedProteinTarget > 0 ? savedProteinTarget : null);
-    try {
-      setMealPlan(savedPlan ? (JSON.parse(savedPlan) as MealPlan) : {});
-    } catch {
-      setMealPlan({});
+    let isMounted = true;
+    async function loadUserState() {
+      setIsRemoteStateLoaded(false);
+      try {
+        const remoteState = await getUserState();
+        if (!isMounted) {
+          return;
+        }
+        const localState = getLocalUserState(auth.userEmail);
+        const remoteIsEmpty =
+          !remoteState.tdeeTarget &&
+          !remoteState.proteinTarget &&
+          Object.keys(remoteState.mealPlan || {}).length === 0;
+        setCurrentTdeeTarget(remoteIsEmpty ? localState.tdeeTarget : remoteState.tdeeTarget);
+        setCurrentProteinTarget(remoteIsEmpty ? localState.proteinTarget : remoteState.proteinTarget);
+        setMealPlan(remoteIsEmpty ? localState.mealPlan : remoteState.mealPlan || {});
+      } catch {
+        if (!isMounted) {
+          return;
+        }
+        const localState = getLocalUserState(auth.userEmail);
+        setCurrentTdeeTarget(localState.tdeeTarget);
+        setCurrentProteinTarget(localState.proteinTarget);
+        setMealPlan(localState.mealPlan);
+      } finally {
+        if (isMounted) {
+          setLoadedStorageUser(auth.userEmail);
+          setIsRemoteStateLoaded(true);
+        }
+      }
     }
-    setLoadedStorageUser(auth.userEmail);
-  }, [auth.userEmail]);
+
+    void loadUserState();
+    return () => {
+      isMounted = false;
+    };
+  }, [auth.accessToken, auth.userEmail]);
 
   useEffect(() => {
     if (auth.userEmail && loadedStorageUser !== auth.userEmail) {
@@ -118,6 +165,22 @@ export function App() {
 
     window.localStorage.setItem(getStorageKey(MEAL_PLAN_STORAGE_KEY, auth.userEmail), JSON.stringify(mealPlan));
   }, [auth.userEmail, loadedStorageUser, mealPlan]);
+
+  useEffect(() => {
+    if (!auth.userEmail || !isRemoteStateLoaded) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void saveUserState({
+        tdeeTarget: currentTdeeTarget,
+        proteinTarget: currentProteinTarget,
+        mealPlan
+      });
+    }, 450);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [auth.userEmail, currentProteinTarget, currentTdeeTarget, isRemoteStateLoaded, mealPlan]);
 
   useEffect(() => {
     function handlePopState() {

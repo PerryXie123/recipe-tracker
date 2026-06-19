@@ -70,3 +70,32 @@ export type SupabaseIngredient = {
   quantity: number | string;
   foods: Food;
 };
+
+export type PlannedMealPayload = {
+  recipeId: string;
+  portion_g: number;
+};
+
+export type MealPlanPayload = Record<string, Record<string, Array<string | PlannedMealPayload> | undefined> | undefined>;
+
+export type UserStatePayload = {
+  tdeeTarget: number | null;
+  proteinTarget: number | null;
+  mealPlan: MealPlanPayload;
+};
+
+export type SupabaseUserSettings = {
+  user_id: string;
+  tdee_target: number | string | null;
+  protein_target: number | string | null;
+};
+
+export type SupabasePlannedMeal = {
+  id?: string;
+  user_id: string;
+  plan_date: string;
+  meal_slot: string;
+  recipe_id: string;
+  portion_g: number | string;
+  sort_order: number;
+};

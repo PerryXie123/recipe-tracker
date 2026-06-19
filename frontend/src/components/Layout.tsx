@@ -43,6 +43,8 @@ const navItems: Array<{ route: Route; label: string; icon: typeof IconHome }> = 
   { route: "tdee", label: "Nutrition", icon: IconCalculator }
 ];
 
+const mobileNavItems = navItems.filter((item) => ["home", "meals", "calendar"].includes(item.route));
+
 const routeTitles: Record<Route, { title: string; description: string }> = {
   home: { title: "Dashboard", description: "Plan, build, and track your meals with ease." },
   ingredients: { title: "Ingredients", description: "Manage foods and nutrition values." },
@@ -125,6 +127,15 @@ export function Layout({
 
           <div className="sidebar-section general-section">
             <span className="sidebar-label">Account</span>
+            {authConfigured && userEmail ? (
+              <div className="sidebar-profile">
+                <span className="avatar">{initials}</span>
+                <span>
+                  <strong>{userName || "Plateful"}</strong>
+                  <small>{userEmail}</small>
+                </span>
+              </div>
+            ) : null}
             <button className="nav-item" type="button" onClick={onSignOut}>
               <IconLogout size={18} />
               <span>Logout</span>
@@ -150,19 +161,11 @@ export function Layout({
               >
                 {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
               </IconButton>
-              {authConfigured && userEmail ? (
-                <div className="profile-chip">
-                  <span className="avatar">{initials}</span>
-                  <span>
-                    <strong>{userName || "Plateful"}</strong>
-                    <small>{userEmail}</small>
-                  </span>
-                </div>
-              ) : (
+              {!userEmail ? (
                 <Button size="sm" loading={isAuthLoading} onClick={onSignIn}>
                   Sign in
                 </Button>
-              )}
+              ) : null}
             </div>
           </header>
 
@@ -182,6 +185,21 @@ export function Layout({
 
           <main className="workspace" data-store={health?.supabaseConfigured ? "supabase" : "demo"}>{children}</main>
         </div>
+
+        <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+          {mobileNavItems.map((item) => (
+            <button
+              className={route === item.route ? "mobile-nav-item active" : "mobile-nav-item"}
+              type="button"
+              aria-current={route === item.route ? "page" : undefined}
+              onClick={() => handleNavigate(item.route)}
+              key={item.route}
+            >
+              <item.icon size={22} stroke={route === item.route ? 2.4 : 1.8} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
     </div>
   );

@@ -323,6 +323,50 @@ th {
   padding-left: 4px;
 }
 
+.sidebar-profile {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--card-soft);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.sidebar-profile strong,
+.sidebar-profile small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-profile small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.mobile-bottom-nav {
+  display: none;
+}
+
+.mobile-fab,
+.mobile-editor-toolbar,
+.mobile-editor-backdrop {
+  display: none;
+}
+
+.mobile-editor-slot,
+.mobile-editor-sheet {
+  display: contents;
+}
+
+.mobile-editor-slot.mobile-only {
+  display: none;
+}
+
 .profile-chip strong,
 .profile-chip small {
   display: block;
@@ -1318,6 +1362,11 @@ th {
   align-items: start;
 }
 
+.calendar-panel {
+  display: grid;
+  gap: 20px;
+}
+
 .calendar-summary-column {
   align-self: start;
 }
@@ -1788,8 +1837,45 @@ th {
 }
 
 @media (max-width: 1120px) {
-  .app-frame {
+  .dashboard-mosaic {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "analytics-calories analytics-calories"
+      "analytics-protein analytics-protein"
+      "reminder recipes"
+      "progress collab"
+      "schedule schedule";
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1320px) {
+  .meals-layout {
     grid-template-columns: 1fr;
+  }
+
+  .meal-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 0;
+  }
+
+  .app-frame {
+    display: block;
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .app-main {
+    padding: 14px 14px calc(96px + env(safe-area-inset-bottom));
   }
 
   .sidebar {
@@ -1831,44 +1917,131 @@ th {
     display: grid;
   }
 
-  .dashboard-mosaic {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "analytics-calories analytics-calories"
-      "analytics-protein analytics-protein"
-      "reminder recipes"
-      "progress collab"
-      "schedule schedule";
+  .mobile-bottom-nav {
+    position: fixed;
+    z-index: 60;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    min-height: 68px;
+    padding: 7px;
+    background: color-mix(in srgb, var(--card) 94%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 0 12px 34px rgba(35, 22, 29, 0.18);
+    backdrop-filter: blur(18px);
   }
 
-  .metric-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 1320px) {
-  .meals-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .meal-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .app-shell {
-    padding: 0;
-  }
-
-  .app-frame {
-    min-height: 100vh;
+  .mobile-nav-item {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    color: var(--muted);
+    background: transparent;
     border: 0;
-    border-radius: 0;
+    border-radius: 16px;
+    font-size: 10px;
+    font-weight: 750;
+    cursor: pointer;
   }
 
-  .app-main {
-    padding: 14px;
+  .mobile-nav-item.active {
+    color: var(--green-dark);
+    background: var(--green-soft);
+  }
+
+  .mobile-fab {
+    position: fixed;
+    z-index: 61;
+    right: 20px;
+    bottom: calc(94px + env(safe-area-inset-bottom));
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    color: #fff;
+    background: var(--green);
+    border: 0;
+    border-radius: 50%;
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--green-dark) 38%, transparent);
+    cursor: pointer;
+  }
+
+  .mobile-fab:active {
+    transform: scale(.96);
+  }
+
+  .mobile-editor-slot,
+  .mobile-editor-slot.mobile-only {
+    display: none;
+  }
+
+  .mobile-editor-slot.open,
+  .mobile-editor-slot.mobile-only.open {
+    position: fixed;
+    z-index: 100;
+    inset: 0;
+    display: grid;
+    align-items: end;
+    padding-top: 28px;
+  }
+
+  .mobile-editor-backdrop {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: rgba(17, 20, 18, .48);
+    border: 0;
+  }
+
+  .mobile-editor-sheet {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 100%;
+    max-height: calc(100dvh - 28px);
+    overflow: hidden;
+    padding: 10px 12px calc(14px + env(safe-area-inset-bottom));
+    background: var(--frame-bg);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -18px 48px rgba(0, 0, 0, .2);
+  }
+
+  .mobile-editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    padding: 0 4px 8px 10px;
+  }
+
+  .mobile-editor-sheet > .form-panel,
+  .mobile-editor-sheet > .right-panel-stack,
+  .mobile-editor-sheet > .mobile-calendar-add-panel {
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .mobile-editor-sheet .form-panel {
+    border-radius: 18px;
+  }
+
+  .calendar-slot-group > .calendar-add {
+    display: none;
+  }
+
+  .mobile-calendar-add-panel {
+    display: grid;
+    align-content: start;
+    gap: 16px;
+  }
+
+  .mobile-calendar-add-panel .calendar-add {
+    display: grid;
   }
 
   .topbar {
@@ -1969,7 +2142,16 @@ th {
 
   .page-title-row {
     gap: 14px;
-    padding-bottom: 18px;
+    padding: 6px 2px 18px;
+  }
+
+  .page-title-row h1 {
+    font-size: 28px;
+  }
+
+  .page-title-row p {
+    margin-top: 6px;
+    font-size: 12px;
   }
 
   .topbar-actions,
@@ -2012,6 +2194,30 @@ th {
     font-size: 12px;
   }
 
+  .toolbar .bulk-delete-action {
+    width: 42px;
+    min-width: 42px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .bulk-delete-action span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .calendar-panel {
+    gap: 14px;
+  }
+
+  .calendar-panel > .calorie-target-card {
+    margin-bottom: 2px;
+  }
+
   .calendar-panel > .section-header .segmented-control {
     justify-self: end;
     width: auto;
@@ -2025,9 +2231,78 @@ th {
     font-size: 11px;
   }
 
-  .profile-chip {
-    grid-template-columns: 42px minmax(0, 1fr);
-    max-width: min(210px, 52vw);
+  .donezo-dashboard {
+    gap: 12px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric-card {
+    gap: 5px;
+    min-height: 112px;
+    padding: 15px;
+    border-radius: 16px;
+  }
+
+  .metric-card span {
+    max-width: calc(100% - 30px);
+    font-size: 11px;
+  }
+
+  .metric-card strong {
+    font-size: 30px;
+  }
+
+  .metric-card small {
+    display: block;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .metric-card small svg {
+    display: none;
+  }
+
+  .metric-card i {
+    top: 11px;
+    right: 11px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .dashboard-mosaic {
+    gap: 12px;
+  }
+
+  .dashboard-mosaic .panel-surface {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .bar-chart {
+    gap: 7px;
+    min-height: 158px;
+    padding-top: 8px;
+  }
+
+  .bar,
+  .bar-striped {
+    height: 120px;
+    gap: 4px;
+  }
+
+  .bar strong,
+  .bar-striped strong {
+    display: none;
+  }
+
+  .goal-line {
+    top: calc(8px + (var(--goal-line-offset) * .7));
   }
 
   .panel-surface,

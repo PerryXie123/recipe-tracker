@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getPathId, readBody, sendJson } from "../http.js";
 import { getAuthContext, type AuthContext } from "../lib/supabase.js";
-import type { NewFoodPayload, NewRecipePayload } from "../types.js";
+import type { NewFoodPayload, NewRecipePayload, UserStatePayload } from "../types.js";
 import { isNodeError } from "../utils/errors.js";
 
 type ApiServices = {
@@ -18,6 +18,10 @@ type ApiServices = {
     updateRecipe: (id: string, payload: NewRecipePayload, auth: AuthContext) => Promise<unknown>;
     deleteRecipe: (id: string, auth: AuthContext) => Promise<unknown>;
   };
+  userState: {
+    getUserState: (auth: AuthContext) => Promise<unknown>;
+    saveUserState: (payload: UserStatePayload, auth: AuthContext) => Promise<unknown>;
+  };
 };
 
 export function createApiHandler(services: ApiServices) {
@@ -30,6 +34,14 @@ export function createApiHandler(services: ApiServices) {
           ok: true,
           supabaseConfigured: services.supabaseConfigured
         });
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/user-state") {
+        return sendJson(response, 200, await services.userState.getUserState(auth));
+      }
+
+      if (request.method === "PUT" && url.pathname === "/api/user-state") {
+        return sendJson(response, 200, await services.userState.saveUserState(await readBody<UserStatePayload>(request), auth));
       }
 
       if (request.method === "GET" && url.pathname === "/api/foods") {

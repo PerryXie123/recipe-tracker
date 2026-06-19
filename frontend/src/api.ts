@@ -1,4 +1,5 @@
 import type { Food, Health, NewFood, NewRecipe, Recipe } from "./types";
+import type { MealPlan } from "./lib/planning";
 
 let apiAccessToken: string | undefined;
 
@@ -46,6 +47,24 @@ export function getFoods() {
 
 export function getRecipes() {
   return request<Recipe[]>("/api/recipes");
+}
+
+export type UserState = {
+  tdeeTarget: number | null;
+  proteinTarget: number | null;
+  mealPlan: MealPlan;
+};
+
+export function getUserState() {
+  return request<UserState>("/api/user-state");
+}
+
+export function saveUserState(state: UserState) {
+  return request<UserState>("/api/user-state", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(state)
+  });
 }
 
 export function createFood(food: NewFood) {
