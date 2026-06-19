@@ -85,6 +85,12 @@ export function MealsPage({
     setCheckedRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
   }, [recipes]);
 
+  useEffect(() => {
+    if (message === "Meal added." || message === "Meal saved.") {
+      setIsMobileEditorOpen(false);
+    }
+  }, [message]);
+
   const filteredRecipes = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) {

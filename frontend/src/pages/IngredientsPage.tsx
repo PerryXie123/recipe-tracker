@@ -63,6 +63,12 @@ export function IngredientsPage({
     setCheckedFoodIds((currentIds) => currentIds.filter((foodId) => foods.some((food) => food.id === foodId)));
   }, [foods]);
 
+  useEffect(() => {
+    if (message === "Ingredient added." || message === "Ingredient saved.") {
+      setIsMobileEditorOpen(false);
+    }
+  }, [message]);
+
   const filteredFoods = useMemo(() => {
     const query = search.trim().toLowerCase();
     return query ? foods.filter((food) => food.name.toLowerCase().includes(query)) : foods;
