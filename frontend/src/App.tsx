@@ -20,10 +20,27 @@ const TDEE_TARGET_STORAGE_KEY = "recipe-tracker-current-tdee-target";
 const PROTEIN_TARGET_STORAGE_KEY = "recipe-tracker-current-protein-target";
 const MEAL_PLAN_STORAGE_KEY = "recipe-tracker-meal-plan";
 const CALENDAR_SELECTED_DATE_STORAGE_KEY = "recipe-tracker-calendar-selected-date";
+const ACCENT_COLOR_STORAGE_KEY = "recipe-tracker-accent-color";
+const DEFAULT_ACCENT_COLOR = "#c72d74";
 
 function getInitialTheme(): Theme {
   const savedTheme = window.localStorage.getItem("recipe-tracker-theme");
   return savedTheme === "dark" ? "dark" : "light";
+}
+
+function getInitialAccentColor() {
+  const savedColor = window.localStorage.getItem(ACCENT_COLOR_STORAGE_KEY);
+  return savedColor && /^#[0-9a-f]{6}$/i.test(savedColor) ? savedColor : DEFAULT_ACCENT_COLOR;
+}
+
+function mixHexColors(color: string, mixWith: string, amount: number) {
+  const channel = (hex: string, offset: number) => Number.parseInt(hex.slice(offset, offset + 2), 16);
+  const mixed = [1, 3, 5].map((offset) =>
+    Math.round(channel(color, offset) * (1 - amount) + channel(mixWith, offset) * amount)
+      .toString(16)
+      .padStart(2, "0")
+  );
+  return `#${mixed.join("")}`;
 }
 
 function getInitialTdeeTarget() {
@@ -92,6 +109,7 @@ export function App() {
   const routeRef = useRef(route);
   const scrollPositionsRef = useRef<Partial<Record<Route, number>>>({});
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [accentColor, setAccentColor] = useState(getInitialAccentColor);
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
@@ -145,7 +163,15 @@ export function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem("recipe-tracker-theme", theme);
-  }, [theme]);
+    window.localStorage.setItem(ACCENT_COLOR_STORAGE_KEY, accentColor);
+    document.documentElement.style.setProperty("--green", accentColor);
+    document.documentElement.style.setProperty("--green-dark", mixHexColors(accentColor, "#000000", 0.28));
+    document.documentElement.style.setProperty(
+      "--green-soft",
+      mixHexColors(accentColor, theme === "dark" ? "#000000" : "#ffffff", theme === "dark" ? 0.68 : 0.86)
+    );
+    document.documentElement.style.setProperty("--mint", mixHexColors(accentColor, "#ffffff", 0.42));
+  }, [accentColor, theme]);
 
   useEffect(() => {
     if (!auth.userEmail || !auth.accessToken) {
@@ -364,12 +390,14 @@ export function App() {
         route={route}
         health={tracker.health}
         theme={theme}
+        accentColor={accentColor}
         authConfigured={auth.authConfigured}
         authConfigMessage={auth.authConfigMessage}
         isAuthLoading={auth.isAuthLoading}
         userEmail={auth.userEmail}
         userName={auth.userName}
         onThemeChange={() => setTheme(theme === "light" ? "dark" : "light")}
+        onAccentColorChange={setAccentColor}
         onNavigate={navigate}
         onSignIn={auth.signInWithGoogle}
         onSignOut={auth.signOut}

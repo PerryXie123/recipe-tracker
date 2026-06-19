@@ -114,11 +114,19 @@ create table if not exists public.planned_meals (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.favorite_recipes (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  recipe_id uuid not null references public.recipes(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, recipe_id)
+);
+
 alter table public.foods enable row level security;
 alter table public.recipes enable row level security;
 alter table public.recipe_ingredients enable row level security;
 alter table public.user_settings enable row level security;
 alter table public.planned_meals enable row level security;
+alter table public.favorite_recipes enable row level security;
 
 drop policy if exists "Service role manages foods" on public.foods;
 drop policy if exists "Service role manages recipes" on public.recipes;
@@ -131,6 +139,7 @@ drop policy if exists "Users update their recipe ingredients" on public.recipe_i
 drop policy if exists "Users delete their recipe ingredients" on public.recipe_ingredients;
 drop policy if exists "Users manage their settings" on public.user_settings;
 drop policy if exists "Users manage their planned meals" on public.planned_meals;
+drop policy if exists "Users manage their favourite recipes" on public.favorite_recipes;
 
 create policy "Users manage their foods" on public.foods
   for all
@@ -224,7 +233,14 @@ create policy "Users manage their planned meals" on public.planned_meals
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
+create policy "Users manage their favourite recipes" on public.favorite_recipes
+  for all
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
 alter table public.planned_meals replica identity full;
+alter table public.favorite_recipes replica identity full;
 
 do $$
 begin
@@ -236,6 +252,19 @@ begin
       and tablename = 'planned_meals'
   ) then
     alter publication supabase_realtime add table public.planned_meals;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'favorite_recipes'
+  ) then
+    alter publication supabase_realtime add table public.favorite_recipes;
   end if;
 end $$;
 

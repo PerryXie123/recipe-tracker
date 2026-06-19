@@ -257,6 +257,36 @@ th {
   text-align: center;
 }
 
+.customization-panel {
+  display: grid;
+  gap: 9px;
+  margin: -4px 8px 2px 16px;
+  padding: 11px;
+  background: var(--card-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.accent-swatches {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.accent-swatch {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 2px solid var(--sidebar-bg);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-strong);
+  cursor: pointer;
+}
+
+.accent-swatch[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
 .app-main {
   display: grid;
   grid-template-rows: auto auto auto 1fr;

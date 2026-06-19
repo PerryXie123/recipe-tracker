@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { MealCard } from "../components/MealCard";
 import { Pagination } from "../components/Pagination";
-import { Panel, TextInput } from "../components/ui";
+import { Panel, SelectInput, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
+import { librarySortOptions, sortLibraryItems, type LibrarySort } from "../lib/sorting";
 import type { Recipe } from "../types";
 
 const FAVOURITES_PER_PAGE = 12;
@@ -27,11 +28,12 @@ export function FavoritesPage({
   onFavoriteToggle
 }: FavoritesPageProps) {
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<LibrarySort>("name-asc");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     setPage(1);
-  }, [search, favoriteRecipeIds.length]);
+  }, [search, sort, favoriteRecipeIds.length]);
 
   const favoriteRecipes = useMemo(
     () => recipes.filter((recipe) => favoriteRecipeIds.includes(recipe.id)),
@@ -40,17 +42,20 @@ export function FavoritesPage({
 
   const filteredRecipes = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) {
-      return favoriteRecipes;
-    }
-
-    return favoriteRecipes.filter((recipe) => {
+    const filtered = query ? favoriteRecipes.filter((recipe) => {
       const ingredientMatch = recipe.ingredients.some((ingredient) =>
         ingredient.food_name.toLowerCase().includes(query)
       );
       return recipe.name.toLowerCase().includes(query) || (recipe.category || "").toLowerCase().includes(query) || ingredientMatch;
+    }) : favoriteRecipes;
+
+    return sortLibraryItems(filtered, sort, {
+      name: (recipe) => recipe.name,
+      createdAt: (recipe) => recipe.created_at,
+      protein: (recipe) => recipe.protein,
+      calories: (recipe) => recipe.calories
     });
-  }, [favoriteRecipes, search]);
+  }, [favoriteRecipes, search, sort]);
 
   const visibleRecipes = paginate(filteredRecipes, page, FAVOURITES_PER_PAGE);
 
@@ -64,6 +69,13 @@ export function FavoritesPage({
             value={search}
             onChange={setSearch}
             placeholder="Search name, category, or ingredient"
+          />
+          <SelectInput
+            className="sort-field"
+            label="Sort by"
+            value={sort}
+            options={librarySortOptions}
+            onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
           />
         </div>
 

@@ -7,6 +7,7 @@ import {
   IconLogout,
   IconMenu2,
   IconMoon,
+  IconPalette,
   IconX,
   IconSoup,
   IconStar,
@@ -22,6 +23,7 @@ type LayoutProps = {
   route: Route;
   health: Health | null;
   theme: "light" | "dark";
+  accentColor: string;
   authConfigured: boolean;
   authConfigMessage: string | null;
   isAuthLoading: boolean;
@@ -29,6 +31,7 @@ type LayoutProps = {
   userName: string | null;
   onNavigate: (route: Route) => void;
   onThemeChange: () => void;
+  onAccentColorChange: (color: string) => void;
   onSignIn: () => void;
   onSignOut: () => void;
   children: ReactNode;
@@ -44,6 +47,7 @@ const navItems: Array<{ route: Route; label: string; icon: typeof IconHome }> = 
 ];
 
 const mobileNavItems = navItems.filter((item) => ["home", "meals", "calendar"].includes(item.route));
+const accentSwatches = ["#c72d74", "#6d5bd0", "#2774c8", "#198f6a", "#d46b24"];
 
 const routeTitles: Record<Route, { title: string; description: string }> = {
   home: { title: "Dashboard", description: "Plan, build, and track your meals with ease." },
@@ -77,6 +81,7 @@ export function Layout({
   route,
   health,
   theme,
+  accentColor,
   authConfigured,
   authConfigMessage,
   isAuthLoading,
@@ -84,12 +89,14 @@ export function Layout({
   userName,
   onNavigate,
   onThemeChange,
+  onAccentColorChange,
   onSignIn,
   onSignOut,
   children
 }: LayoutProps) {
   const initials = (userName || userEmail || "R").slice(0, 1).toUpperCase();
   const [isNavOpen, setIsNavOpen] = useState(false);
+  const [isCustomizationOpen, setIsCustomizationOpen] = useState(false);
   const pageTitle =
     route === "home" ? `${getTimeGreeting()}, ${getFirstName(userName, userEmail)}` : routeTitles[route].title;
 
@@ -140,6 +147,33 @@ export function Layout({
               {theme === "dark" ? <IconSun size={18} /> : <IconMoon size={18} />}
               <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
             </button>
+            <button
+              className={isCustomizationOpen ? "nav-item active" : "nav-item"}
+              type="button"
+              aria-expanded={isCustomizationOpen}
+              onClick={() => setIsCustomizationOpen(!isCustomizationOpen)}
+            >
+              <IconPalette size={18} />
+              <span>Customization</span>
+            </button>
+            {isCustomizationOpen ? (
+              <div className="customization-panel">
+                <span className="muted small strong">Site colour</span>
+                <div className="accent-swatches" aria-label="Preset site colours">
+                  {accentSwatches.map((color) => (
+                    <button
+                      className="accent-swatch"
+                      type="button"
+                      aria-label={`Use ${color}`}
+                      aria-pressed={accentColor.toLowerCase() === color}
+                      style={{ backgroundColor: color }}
+                      onClick={() => onAccentColorChange(color)}
+                      key={color}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
             <button className="nav-item" type="button" onClick={onSignOut}>
               <IconLogout size={18} />
               <span>Logout</span>

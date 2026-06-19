@@ -13,6 +13,7 @@ import {
 } from "../api";
 import { KJ_PER_CALORIE, round1 } from "../lib/format";
 import type { Route } from "../lib/routing";
+import { supabase } from "../lib/supabase";
 import type { Food, Health, NewFood, NewRecipe, Recipe } from "../types";
 
 const initialFood: NewFood = {
@@ -96,6 +97,84 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   useEffect(() => {
     window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteRecipeIds));
   }, [favoriteRecipeIds]);
+
+  useEffect(() => {
+    if (!supabase || !accessToken) {
+      return;
+    }
+
+    const supabaseClient = supabase;
+    let isMounted = true;
+    let channel: ReturnType<typeof supabaseClient.channel> | null = null;
+
+    async function loadFavoriteIds() {
+      const { data, error } = await supabaseClient
+        .from("favorite_recipes")
+        .select("recipe_id")
+        .order("created_at");
+      if (error) {
+        throw error;
+      }
+      return (data || []).map((favorite) => String(favorite.recipe_id));
+    }
+
+    async function initializeFavorites() {
+      try {
+        const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+        if (sessionError) {
+          throw sessionError;
+        }
+
+        const userId = sessionData.session?.user.id;
+        if (!userId || !isMounted) {
+          return;
+        }
+
+        let remoteIds = await loadFavoriteIds();
+        const localIds = getInitialFavoriteRecipeIds();
+        if (remoteIds.length === 0 && localIds.length > 0) {
+          await Promise.allSettled(
+            localIds.map((recipeId) =>
+              supabaseClient.from("favorite_recipes").upsert({ user_id: userId, recipe_id: recipeId })
+            )
+          );
+          remoteIds = await loadFavoriteIds();
+        }
+
+        if (isMounted) {
+          setFavoriteRecipeIds(remoteIds);
+        }
+
+        channel = supabaseClient
+          .channel(`favorite-recipes-${userId}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "favorite_recipes", filter: `user_id=eq.${userId}` },
+            () => {
+              void loadFavoriteIds()
+                .then((ids) => {
+                  if (isMounted) {
+                    setFavoriteRecipeIds(ids);
+                  }
+                })
+                .catch((error) => console.error("Could not refresh favourites from the database", error));
+            }
+          )
+          .subscribe();
+      } catch (error) {
+        console.error("Could not load favourites from the database", error);
+      }
+    }
+
+    void initializeFavorites();
+
+    return () => {
+      isMounted = false;
+      if (channel) {
+        void supabaseClient.removeChannel(channel);
+      }
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     setFavoriteRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
@@ -377,11 +456,37 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   }
 
   function toggleFavoriteRecipe(recipeId: string) {
-    setFavoriteRecipeIds((currentIds) =>
-      currentIds.includes(recipeId)
-        ? currentIds.filter((currentId) => currentId !== recipeId)
-        : [...currentIds, recipeId]
+    const wasFavorite = favoriteRecipeIds.includes(recipeId);
+    setFavoriteRecipeIds(
+      wasFavorite
+        ? favoriteRecipeIds.filter((currentId) => currentId !== recipeId)
+        : [...favoriteRecipeIds, recipeId]
     );
+
+    if (supabase && accessToken) {
+      const supabaseClient = supabase;
+      void supabaseClient.auth.getSession().then(async ({ data, error: sessionError }) => {
+        const userId = data.session?.user.id;
+        if (sessionError || !userId) {
+          throw sessionError || new Error("Sign in to save favourites.");
+        }
+
+        const result = wasFavorite
+          ? await supabaseClient.from("favorite_recipes").delete().eq("user_id", userId).eq("recipe_id", recipeId)
+          : await supabaseClient.from("favorite_recipes").upsert({ user_id: userId, recipe_id: recipeId });
+
+        if (result.error) {
+          throw result.error;
+        }
+      }).catch((error) => {
+        console.error("Could not sync favourite to the database", error);
+        setFavoriteRecipeIds((currentIds) =>
+          wasFavorite
+            ? currentIds.includes(recipeId) ? currentIds : [...currentIds, recipeId]
+            : currentIds.filter((currentId) => currentId !== recipeId)
+        );
+      });
+    }
   }
 
   return {
