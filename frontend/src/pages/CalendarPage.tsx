@@ -252,7 +252,10 @@ export function CalendarPage({
                               </span>
                               <button type="button" onClick={() => onEditRecipe(recipe)}>
                                 <span>{recipe.name}</span>
-                                <small>{formatNumber(portionCalories)} cal - {formatNumber(portionProtein)}g protein</small>
+                                <small className="calendar-meal-nutrition">
+                                  <span>{formatNumber(portionCalories)} cal</span>
+                                  <span>{formatNumber(portionProtein)}g protein</span>
+                                </small>
                               </button>
                               <NumericInput
                                 className="calendar-portion-input"

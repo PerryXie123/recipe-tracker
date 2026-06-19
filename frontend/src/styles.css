@@ -1839,6 +1839,16 @@ th {
   padding: 6px 8px;
 }
 
+.calendar-meal-nutrition {
+  display: flex;
+  gap: 4px;
+}
+
+.calendar-meal-nutrition span + span::before {
+  content: "\2022";
+  margin-right: 4px;
+}
+
 .calendar-meal-pill .icon-button-control {
   width: 34px;
   height: 34px;
@@ -2302,6 +2312,16 @@ th {
   .calendar-meal-pill button {
     min-height: 40px;
     padding: 4px 6px;
+  }
+
+  .calendar-meal-nutrition {
+    display: grid;
+    gap: 0;
+    line-height: 1.25;
+  }
+
+  .calendar-meal-nutrition span + span::before {
+    content: none;
   }
 
   .calendar-portion-input {
