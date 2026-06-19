@@ -5,6 +5,7 @@ import { createSupabaseClient } from "../backend/src/lib/supabase.js";
 import { createApiHandler } from "../backend/src/routes/api.js";
 import { createFoodService } from "../backend/src/services/foods.js";
 import { createRecipeService } from "../backend/src/services/recipes.js";
+import { createUserStateService } from "../backend/src/services/userState.js";
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL);
 const supabaseKey =
@@ -17,7 +18,8 @@ const supabase = createSupabaseClient(supabaseUrl, supabaseKey);
 const handleApi = createApiHandler({
   supabaseConfigured: supabase.configured,
   foods: createFoodService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request }),
-  recipes: createRecipeService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request })
+  recipes: createRecipeService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request }),
+  userState: createUserStateService({ supabaseConfigured: supabase.configured, createSupabase: supabase.request })
 });
 
 export default async function handler(request: IncomingMessage, response: ServerResponse) {
