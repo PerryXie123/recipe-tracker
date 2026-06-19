@@ -4,7 +4,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useRecipeTracker } from "./hooks/useRecipeTracker";
 import { getUserState, saveUserState } from "./api";
 import { getPathForRoute, getRouteFromPath, type Route } from "./lib/routing";
-import type { MealPlan } from "./lib/planning";
+import { toDateKey, type MealPlan } from "./lib/planning";
 import { HomePage } from "./pages/HomePage";
 import { IngredientsPage } from "./pages/IngredientsPage";
 import { MealsPage } from "./pages/MealsPage";
@@ -18,6 +18,7 @@ type Theme = "light" | "dark";
 const TDEE_TARGET_STORAGE_KEY = "recipe-tracker-current-tdee-target";
 const PROTEIN_TARGET_STORAGE_KEY = "recipe-tracker-current-protein-target";
 const MEAL_PLAN_STORAGE_KEY = "recipe-tracker-meal-plan";
+const CALENDAR_SELECTED_DATE_STORAGE_KEY = "recipe-tracker-calendar-selected-date";
 
 function getInitialTheme(): Theme {
   const savedTheme = window.localStorage.getItem("recipe-tracker-theme");
@@ -41,6 +42,20 @@ function getInitialMealPlan(): MealPlan {
   } catch {
     return {};
   }
+}
+
+function getInitialCalendarSelectedDate() {
+  const savedDate = window.localStorage.getItem(CALENDAR_SELECTED_DATE_STORAGE_KEY);
+  const match = savedDate?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (match) {
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    if (!Number.isNaN(date.getTime()) && toDateKey(date) === savedDate) {
+      return date;
+    }
+  }
+
+  return new Date();
 }
 
 function getStorageKey(baseKey: string, userEmail?: string | null) {
@@ -79,10 +94,22 @@ export function App() {
   const [currentTdeeTarget, setCurrentTdeeTarget] = useState<number | null>(getInitialTdeeTarget);
   const [currentProteinTarget, setCurrentProteinTarget] = useState<number | null>(getInitialProteinTarget);
   const [mealPlan, setMealPlan] = useState<MealPlan>(getInitialMealPlan);
-  const [calendarSelectedDate, setCalendarSelectedDate] = useState(new Date());
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState(getInitialCalendarSelectedDate);
   const [loadedStorageUser, setLoadedStorageUser] = useState<string | null>(null);
   const [isRemoteStateLoaded, setIsRemoteStateLoaded] = useState(false);
+  const [remoteSyncRetry, setRemoteSyncRetry] = useState(0);
+  const mealPlanRef = useRef(mealPlan);
+  const lastSyncedMealPlanRef = useRef("");
+  const remoteSaveCountRef = useRef(0);
   const auth = useAuth();
+
+  useEffect(() => {
+    window.localStorage.setItem(CALENDAR_SELECTED_DATE_STORAGE_KEY, toDateKey(calendarSelectedDate));
+  }, [calendarSelectedDate]);
+
+  useEffect(() => {
+    mealPlanRef.current = mealPlan;
+  }, [mealPlan]);
 
   function navigate(nextRoute: Route) {
     if (nextRoute === routeRef.current) {
@@ -138,9 +165,11 @@ export function App() {
           !remoteState.tdeeTarget &&
           !remoteState.proteinTarget &&
           Object.keys(remoteState.mealPlan || {}).length === 0;
+        const nextMealPlan = remoteIsEmpty ? localState.mealPlan : remoteState.mealPlan || {};
         setCurrentTdeeTarget(remoteIsEmpty ? localState.tdeeTarget : remoteState.tdeeTarget);
         setCurrentProteinTarget(remoteIsEmpty ? localState.proteinTarget : remoteState.proteinTarget);
-        setMealPlan(remoteIsEmpty ? localState.mealPlan : remoteState.mealPlan || {});
+        lastSyncedMealPlanRef.current = JSON.stringify(nextMealPlan);
+        setMealPlan(nextMealPlan);
       } catch {
         if (!isMounted) {
           return;
@@ -148,6 +177,7 @@ export function App() {
         const localState = getLocalUserState(auth.userEmail);
         setCurrentTdeeTarget(localState.tdeeTarget);
         setCurrentProteinTarget(localState.proteinTarget);
+        lastSyncedMealPlanRef.current = JSON.stringify(localState.mealPlan);
         setMealPlan(localState.mealPlan);
       } finally {
         if (isMounted) {
@@ -196,16 +226,87 @@ export function App() {
       return;
     }
 
+    let isCurrentSave = true;
+    let retryTimeoutId: number | undefined;
     const timeoutId = window.setTimeout(() => {
-      void saveUserState({
-        tdeeTarget: currentTdeeTarget,
-        proteinTarget: currentProteinTarget,
-        mealPlan
-      });
+      remoteSaveCountRef.current += 1;
+      void saveUserState({ tdeeTarget: currentTdeeTarget, proteinTarget: currentProteinTarget, mealPlan })
+        .then((savedState) => {
+          if (isCurrentSave) {
+            lastSyncedMealPlanRef.current = JSON.stringify(savedState.mealPlan || {});
+          }
+        })
+        .catch((error) => {
+          console.error("Could not sync the meal plan to the database", error);
+          if (isCurrentSave) {
+            retryTimeoutId = window.setTimeout(() => setRemoteSyncRetry((retry) => retry + 1), 3_000);
+          }
+        })
+        .finally(() => {
+          remoteSaveCountRef.current = Math.max(0, remoteSaveCountRef.current - 1);
+        });
     }, 450);
 
-    return () => window.clearTimeout(timeoutId);
-  }, [auth.userEmail, currentProteinTarget, currentTdeeTarget, isRemoteStateLoaded, mealPlan]);
+    return () => {
+      isCurrentSave = false;
+      window.clearTimeout(timeoutId);
+      if (retryTimeoutId) {
+        window.clearTimeout(retryTimeoutId);
+      }
+    };
+  }, [auth.userEmail, currentProteinTarget, currentTdeeTarget, isRemoteStateLoaded, mealPlan, remoteSyncRetry]);
+
+  useEffect(() => {
+    if (!auth.userEmail || !auth.accessToken || !isRemoteStateLoaded) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function refreshMealPlan() {
+      if (document.visibilityState === "hidden" || remoteSaveCountRef.current > 0) {
+        return;
+      }
+
+      const localPlan = JSON.stringify(mealPlanRef.current);
+      if (localPlan !== lastSyncedMealPlanRef.current) {
+        return;
+      }
+
+      try {
+        const remoteState = await getUserState();
+        if (!isMounted) {
+          return;
+        }
+
+        const remotePlan = remoteState.mealPlan || {};
+        const serializedRemotePlan = JSON.stringify(remotePlan);
+        if (serializedRemotePlan !== lastSyncedMealPlanRef.current) {
+          lastSyncedMealPlanRef.current = serializedRemotePlan;
+          setMealPlan(remotePlan);
+        }
+      } catch (error) {
+        console.error("Could not refresh the meal plan from the database", error);
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void refreshMealPlan();
+      }
+    }
+
+    const intervalId = window.setInterval(() => void refreshMealPlan(), 15_000);
+    window.addEventListener("focus", refreshMealPlan);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshMealPlan);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [auth.accessToken, auth.userEmail, isRemoteStateLoaded]);
 
   useEffect(() => {
     function handlePopState() {
