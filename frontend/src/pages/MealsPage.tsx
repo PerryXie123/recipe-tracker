@@ -76,7 +76,7 @@ export function MealsPage({
   onFavoriteToggle
 }: MealsPageProps) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<LibrarySort>("name-asc");
+  const [sort, setSort] = useState<LibrarySort>("created-desc");
   const [page, setPage] = useState(1);
   const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
@@ -197,7 +197,7 @@ export function MealsPage({
               label="Sort by"
               value={sort}
               options={librarySortOptions}
-              onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
+              onChange={(value) => setSort((value || "created-desc") as LibrarySort)}
             />
             <div className="inline-actions">
               <Button
