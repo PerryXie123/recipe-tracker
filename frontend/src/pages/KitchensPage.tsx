@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { IconCheck, IconCopy, IconDoorExit, IconMail, IconPencil, IconTrash, IconUsers } from "@tabler/icons-react";
-import type { Kitchen, KitchenInvite, KitchenMember } from "../hooks/useKitchens";
+import type { Kitchen, KitchenCounts, KitchenInvite, KitchenMember } from "../hooks/useKitchens";
 import { Button, ConfirmModal, TextInput } from "../components/ui";
 
 type Props = {
@@ -8,6 +8,7 @@ type Props = {
   kitchens: Kitchen[];
   members: KitchenMember[];
   invites: KitchenInvite[];
+  counts: Record<string, KitchenCounts>;
   activeKitchenId?: string;
   message: string;
   onSelect: (id: string) => void;
@@ -34,8 +35,20 @@ export function KitchensPage(props: Props) {
 
   async function run(action: () => Promise<void>) {
     setBusy(true); setNotice("");
-    try { await action(); } catch (error) { setNotice(error instanceof Error ? error.message : "Something went wrong."); }
+    try { await action(); } catch (error) { setNotice(getErrorMessage(error)); }
     finally { setBusy(false); }
+  }
+
+  function createKitchen() {
+    const requestedName = newName.trim();
+    const isDuplicate = props.kitchens.some(
+      (kitchen) => kitchen.name.trim().toLocaleLowerCase() === requestedName.toLocaleLowerCase()
+    );
+    if (isDuplicate) {
+      setNotice(`You are already part of a kitchen named “${requestedName}”. Choose a different name.`);
+      return;
+    }
+    void run(async () => { await props.onCreate(requestedName); setNewName(""); });
   }
 
   return <div className="kitchens-page">
@@ -51,7 +64,7 @@ export function KitchensPage(props: Props) {
       <div className="panel kitchen-action-card">
         <h2>Create a kitchen</h2><p className="muted">Start a shared space for ingredients and meals.</p>
         <TextInput label="Kitchen name" value={newName} placeholder="Flat kitchen" onChange={setNewName} />
-        <Button disabled={!newName.trim()} loading={busy} onClick={() => run(async () => { await props.onCreate(newName); setNewName(""); })}>Create kitchen</Button>
+        <Button disabled={!newName.trim()} loading={busy} onClick={createKitchen}>Create kitchen</Button>
       </div>
       <div className="panel kitchen-action-card">
         <h2>Join a kitchen</h2><p className="muted">Enter the code someone shared with you.</p>
@@ -64,9 +77,10 @@ export function KitchensPage(props: Props) {
       {props.kitchens.map((kitchen) => {
         const owner = kitchen.owner_id === props.userId;
         const kitchenMembers = props.members.filter((member) => member.kitchen_id === kitchen.id);
+        const kitchenCounts = props.counts[kitchen.id] || { ingredients: 0, meals: 0 };
         return <section className={kitchen.id === props.activeKitchenId ? "panel kitchen-manager-card active" : "panel kitchen-manager-card"} key={kitchen.id}>
           <div className="kitchen-card-heading">
-            <div><span className="kitchen-icon"><IconUsers size={20}/></span><div><h2>{kitchen.name}</h2><p className="muted">{kitchen.is_personal ? "Private to you" : `${kitchenMembers.length} member${kitchenMembers.length === 1 ? "" : "s"}`}</p></div></div>
+            <div><span className="kitchen-icon"><IconUsers size={20}/></span><div><h2>{kitchen.name}</h2><p className="muted kitchen-stats"><span>{kitchenMembers.length} member{kitchenMembers.length === 1 ? "" : "s"}</span><span>{kitchenCounts.ingredients} ingredient{kitchenCounts.ingredients === 1 ? "" : "s"}</span><span>{kitchenCounts.meals} meal{kitchenCounts.meals === 1 ? "" : "s"}</span></p></div></div>
             {kitchen.id === props.activeKitchenId ? <span className="active-kitchen-badge"><IconCheck size={14}/> Current</span> : <Button size="sm" variant="secondary" onClick={() => props.onSelect(kitchen.id)}>Switch</Button>}
           </div>
           {!kitchen.is_personal ? <>
@@ -100,4 +114,12 @@ export function KitchensPage(props: Props) {
       </div>}
     /> : null}
   </div>;
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return "Something went wrong.";
 }

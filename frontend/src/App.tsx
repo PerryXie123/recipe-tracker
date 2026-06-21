@@ -549,6 +549,7 @@ export function App() {
             kitchens={kitchenState.kitchens}
             members={kitchenState.members}
             invites={kitchenState.invites}
+            counts={kitchenState.counts}
             activeKitchenId={kitchenState.activeKitchenId}
             message={kitchenState.message}
             onSelect={kitchenState.setActiveKitchenId}
