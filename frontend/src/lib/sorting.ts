@@ -9,14 +9,14 @@ export type LibrarySort =
   | "calories-desc";
 
 export const librarySortOptions: Array<{ value: LibrarySort; label: string }> = [
-  { value: "name-asc", label: "Alphabetical (A–Z)" },
-  { value: "name-desc", label: "Alphabetical (Z–A)" },
-  { value: "created-desc", label: "Date created (newest)" },
-  { value: "created-asc", label: "Date created (oldest)" },
-  { value: "protein-asc", label: "Protein (low to high)" },
-  { value: "protein-desc", label: "Protein (high to low)" },
-  { value: "calories-asc", label: "Calories (low to high)" },
-  { value: "calories-desc", label: "Calories (high to low)" }
+  { value: "name-asc", label: "Alphabetical ↑" },
+  { value: "name-desc", label: "Alphabetical ↓" },
+  { value: "created-asc", label: "Date created ↑" },
+  { value: "created-desc", label: "Date created ↓" },
+  { value: "protein-asc", label: "Protein ↑" },
+  { value: "protein-desc", label: "Protein ↓" },
+  { value: "calories-asc", label: "Calories ↑" },
+  { value: "calories-desc", label: "Calories ↓" }
 ];
 
 export function sortLibraryItems<T>(

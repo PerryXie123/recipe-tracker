@@ -41,9 +41,13 @@ export function filterEq(column: string, value: string) {
 export type AuthContext = {
   accessToken?: string;
   userId?: string;
+  kitchenId?: string;
 };
 
-export function getAuthContext(authorizationHeader: string | string[] | undefined): AuthContext {
+export function getAuthContext(
+  authorizationHeader: string | string[] | undefined,
+  kitchenHeader?: string | string[]
+): AuthContext {
   const header = Array.isArray(authorizationHeader) ? authorizationHeader[0] : authorizationHeader;
   const match = header?.match(/^Bearer\s+(.+)$/i);
   const accessToken = match?.[1];
@@ -54,7 +58,8 @@ export function getAuthContext(authorizationHeader: string | string[] | undefine
 
   return {
     accessToken,
-    userId: getJwtSubject(accessToken)
+    userId: getJwtSubject(accessToken),
+    kitchenId: Array.isArray(kitchenHeader) ? kitchenHeader[0] : kitchenHeader
   };
 }
 

@@ -18,7 +18,7 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
     }
 
     const supabase = getSupabaseForUser(auth);
-    const recipes = await supabase<SupabaseRecipe[]>("recipes?select=*&order=created_at.desc");
+    const recipes = await supabase<SupabaseRecipe[]>(`recipes?select=*&${getKitchenFilter(auth)}&order=created_at.desc`);
     const ingredients = await supabase<SupabaseIngredient[]>(
       "recipe_ingredients?select=id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label,unit_weight_g)"
     );
@@ -108,7 +108,9 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
       category: payload.category || null,
       target_plan: payload.target_plan || null,
       total_weight_g: round1(totalWeight),
-      user_id: auth.userId
+      user_id: auth.userId,
+      kitchen_id: requireKitchen(auth),
+      created_by: auth.userId
     };
 
     const supabase = getSupabaseForUser(auth);
@@ -165,6 +167,15 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
     }
 
     return createSupabase(auth.accessToken);
+  }
+
+  function requireKitchen(auth: AuthContext) {
+    if (!auth.kitchenId) throw badRequest("Select a kitchen first.");
+    return auth.kitchenId;
+  }
+
+  function getKitchenFilter(auth: AuthContext) {
+    return filterEq("kitchen_id", requireKitchen(auth));
   }
 }
 

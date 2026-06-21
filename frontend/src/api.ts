@@ -3,9 +3,14 @@ import { getPlannedPortion, getPlannedRecipeId, type MealPlan, type MealSlot } f
 import { supabase } from "./lib/supabase";
 
 let apiAccessToken: string | undefined;
+let apiKitchenId: string | undefined;
 
 export function setApiAccessToken(accessToken: string | undefined) {
   apiAccessToken = accessToken;
+}
+
+export function setApiKitchenId(kitchenId: string | undefined) {
+  apiKitchenId = kitchenId;
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -13,6 +18,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (apiAccessToken) {
     headers.set("authorization", `Bearer ${apiAccessToken}`);
   }
+  if (apiKitchenId) headers.set("x-kitchen-id", apiKitchenId);
 
   const response = await fetch(path, { ...options, headers });
   const responseText = await response.text();

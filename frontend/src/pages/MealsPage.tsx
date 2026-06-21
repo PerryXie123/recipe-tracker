@@ -2,6 +2,7 @@ import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { IconTrash } from "@tabler/icons-react";
 import { MealCard } from "../components/MealCard";
+import { MealGridSkeleton } from "../components/Skeletons";
 import { Pagination } from "../components/Pagination";
 import { RecipeForm } from "../components/RecipeForm";
 import { Button, ConfirmModal, MobileEditor, MobileFab, Panel, SelectInput, TextInput } from "../components/ui";
@@ -20,6 +21,7 @@ type MealsPageProps = {
   isEditing: boolean;
   editingRecipeId: string | null;
   isSaving: boolean;
+  isLoading?: boolean;
   message: string;
   portionWeights: Record<string, number>;
   favoriteRecipeIds: string[];
@@ -51,6 +53,7 @@ export function MealsPage({
   isEditing,
   editingRecipeId,
   isSaving,
+  isLoading = false,
   message,
   portionWeights,
   favoriteRecipeIds,
@@ -210,7 +213,7 @@ export function MealsPage({
             </div>
           </div>
 
-          <div className="meal-grid" aria-live="polite">
+          {isLoading ? <MealGridSkeleton /> : <div className="meal-grid" aria-live="polite">
             {visibleRecipes.items.map((recipe) => (
               <MealCard
                 recipe={recipe}
@@ -225,7 +228,7 @@ export function MealsPage({
                 key={recipe.id}
               />
             ))}
-          </div>
+          </div>}
 
           <Pagination
             page={visibleRecipes.page}

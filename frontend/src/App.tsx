@@ -13,6 +13,9 @@ import { FavoritesPage } from "./pages/FavoritesPage";
 import { LandingPage } from "./pages/LandingPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { TdeePage } from "./pages/TdeePage";
+import { PageSkeleton } from "./components/Skeletons";
+import { useKitchens } from "./hooks/useKitchens";
+import { KitchensPage } from "./pages/KitchensPage";
 
 type Theme = "light" | "dark";
 
@@ -121,6 +124,7 @@ export function App() {
   const lastSyncedMealPlanRef = useRef("");
   const remoteSaveCountRef = useRef(0);
   const auth = useAuth();
+  const kitchenState = useKitchens(auth.session?.user.id);
 
   useEffect(() => {
     window.localStorage.setItem(CALENDAR_SELECTED_DATE_STORAGE_KEY, toDateKey(calendarSelectedDate));
@@ -142,7 +146,8 @@ export function App() {
     setRoute(nextRoute);
   }
 
-  const tracker = useRecipeTracker((nextRoute) => navigate(nextRoute), auth.accessToken);
+  const tracker = useRecipeTracker((nextRoute) => navigate(nextRoute), auth.accessToken, kitchenState.activeKitchenId);
+  const isPageLoading = route === "home" && (tracker.isLoading || !isRemoteStateLoaded);
 
   useLayoutEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -374,7 +379,10 @@ export function App() {
             <span className="brand-mark">P</span>
             <strong>Plateful</strong>
           </div>
-          <p className="muted">Restoring your session...</p>
+          <div className="auth-loading-copy" role="status" aria-label="Restoring your session">
+            <span className="skeleton skeleton-title" aria-hidden="true" />
+            <span className="skeleton skeleton-copy" aria-hidden="true" />
+          </div>
         </div>
       ) : !auth.userEmail ? (
         <LandingPage
@@ -396,12 +404,18 @@ export function App() {
         isAuthLoading={auth.isAuthLoading}
         userEmail={auth.userEmail}
         userName={auth.userName}
+        kitchens={kitchenState.kitchens}
+        activeKitchenId={kitchenState.activeKitchenId}
+        onKitchenChange={(id) => void kitchenState.setActiveKitchenId(id)}
         onThemeChange={() => setTheme(theme === "light" ? "dark" : "light")}
         onAccentColorChange={setAccentColor}
         onNavigate={navigate}
         onSignIn={auth.signInWithGoogle}
         onSignOut={auth.signOut}
       >
+        {isPageLoading ? <PageSkeleton route={route} /> : null}
+        {!isPageLoading ? (
+          <>
         {route === "home" ? (
           <HomePage
             foods={tracker.foods}
@@ -424,6 +438,7 @@ export function App() {
             isEditing={Boolean(tracker.editingFoodId)}
             editingFoodId={tracker.editingFoodId}
             isSaving={tracker.isSavingFood}
+            isLoading={tracker.isLoading}
             message={tracker.message}
             onFoodChange={tracker.setFoodForm}
             onCaloriesChange={tracker.updateFoodCalories}
@@ -447,6 +462,7 @@ export function App() {
             isEditing={Boolean(tracker.editingRecipeId)}
             editingRecipeId={tracker.editingRecipeId}
             isSaving={tracker.isSavingRecipe}
+            isLoading={tracker.isLoading}
             message={tracker.recipeMessage}
             portionWeights={tracker.portionWeights}
             favoriteRecipeIds={tracker.favoriteRecipeIds}
@@ -479,6 +495,7 @@ export function App() {
             getPortionTotals={tracker.getPortionTotals}
             onEdit={tracker.editRecipe}
             onFavoriteToggle={tracker.toggleFavoriteRecipe}
+            isLoading={tracker.isLoading}
           />
         ) : null}
 
@@ -492,6 +509,7 @@ export function App() {
             onMealPlanChange={setMealPlan}
             onSelectedDateChange={setCalendarSelectedDate}
             onEditRecipe={tracker.editRecipe}
+            isLoading={tracker.isLoading || !isRemoteStateLoaded}
           />
         ) : null}
 
@@ -502,6 +520,26 @@ export function App() {
             onSetCurrentTarget={setCurrentTdeeTarget}
             onSetCurrentProteinTarget={setCurrentProteinTarget}
           />
+        ) : null}
+        {route === "kitchens" && auth.session?.user.id ? (
+          <KitchensPage
+            userId={auth.session.user.id}
+            kitchens={kitchenState.kitchens}
+            members={kitchenState.members}
+            invites={kitchenState.invites}
+            activeKitchenId={kitchenState.activeKitchenId}
+            message={kitchenState.message}
+            onSelect={kitchenState.setActiveKitchenId}
+            onCreate={kitchenState.createKitchen}
+            onJoin={kitchenState.joinKitchen}
+            onRename={kitchenState.renameKitchen}
+            onInvite={kitchenState.inviteByEmail}
+            onAcceptInvite={kitchenState.acceptInvite}
+            onDeclineInvite={kitchenState.declineInvite}
+            onRemoveMember={kitchenState.removeMember}
+          />
+        ) : null}
+          </>
         ) : null}
       </Layout>
       )}

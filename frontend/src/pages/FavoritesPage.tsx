@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { MealCard } from "../components/MealCard";
+import { MealGridSkeleton } from "../components/Skeletons";
 import { Pagination } from "../components/Pagination";
 import { Panel, SelectInput, TextInput } from "../components/ui";
 import { paginate } from "../lib/pagination";
@@ -16,6 +17,7 @@ type FavoritesPageProps = {
   getPortionTotals: (recipe: Recipe) => { weight: number; calories: number; kj: number; protein: number };
   onEdit: (recipe: Recipe) => void;
   onFavoriteToggle: (recipeId: string) => void;
+  isLoading?: boolean;
 };
 
 export function FavoritesPage({
@@ -25,7 +27,8 @@ export function FavoritesPage({
   onPortionWeightsChange,
   getPortionTotals,
   onEdit,
-  onFavoriteToggle
+  onFavoriteToggle,
+  isLoading = false
 }: FavoritesPageProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<LibrarySort>("name-asc");
@@ -79,7 +82,7 @@ export function FavoritesPage({
           />
         </div>
 
-        {filteredRecipes.length === 0 ? (
+        {isLoading ? <MealGridSkeleton /> : filteredRecipes.length === 0 ? (
           <div className="empty-state">
             <strong>No favourite meals yet</strong>
             <p className="muted small">Use the star on a meal card to add it here.</p>

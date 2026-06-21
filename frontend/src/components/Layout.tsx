@@ -16,8 +16,9 @@ import {
   IconUsers
 } from "@tabler/icons-react";
 import type { Health } from "../types";
+import type { Kitchen } from "../hooks/useKitchens";
 import type { Route } from "../lib/routing";
-import { Button, IconButton } from "./ui";
+import { Button, IconButton, SelectInput } from "./ui";
 
 type LayoutProps = {
   route: Route;
@@ -29,6 +30,9 @@ type LayoutProps = {
   isAuthLoading: boolean;
   userEmail: string | null;
   userName: string | null;
+  kitchens: Kitchen[];
+  activeKitchenId?: string;
+  onKitchenChange: (id: string) => void;
   onNavigate: (route: Route) => void;
   onThemeChange: () => void;
   onAccentColorChange: (color: string) => void;
@@ -43,7 +47,8 @@ const navItems: Array<{ route: Route; label: string; icon: typeof IconHome }> = 
   { route: "meals", label: "Meals", icon: IconSoup },
   { route: "favorites", label: "Favourites", icon: IconStar },
   { route: "calendar", label: "Calendar", icon: IconCalendarWeek },
-  { route: "tdee", label: "Nutrition", icon: IconCalculator }
+  { route: "tdee", label: "Nutrition", icon: IconCalculator },
+  { route: "kitchens", label: "Kitchen manager", icon: IconUsers }
 ];
 
 const mobileNavItems = navItems.filter((item) => ["home", "meals", "calendar"].includes(item.route));
@@ -55,7 +60,8 @@ const routeTitles: Record<Route, { title: string; description: string }> = {
   meals: { title: "Meals", description: "Build recipes from ingredients and calculate portions." },
   favorites: { title: "Favourites", description: "A focused view of meals you reach for often." },
   calendar: { title: "Calendar", description: "Plan dated weeks from Monday through Sunday." },
-  tdee: { title: "Nutrition", description: "Estimate maintenance calories and set your current target." }
+  tdee: { title: "Nutrition", description: "Estimate maintenance calories and set your current target." },
+  kitchens: { title: "Kitchen manager", description: "Create, join, and manage your shared kitchens." }
 };
 
 function getTimeGreeting() {
@@ -87,6 +93,9 @@ export function Layout({
   isAuthLoading,
   userEmail,
   userName,
+  kitchens,
+  activeKitchenId,
+  onKitchenChange,
   onNavigate,
   onThemeChange,
   onAccentColorChange,
@@ -196,6 +205,12 @@ export function Layout({
               <strong>Plateful</strong>
             </button>
             <div className="topbar-actions">
+              {userEmail && kitchens.length ? <SelectInput
+                className="kitchen-switcher"
+                value={activeKitchenId || null}
+                options={kitchens.map((kitchen) => ({ value: kitchen.id, label: kitchen.name }))}
+                onChange={(id) => { if (id) onKitchenChange(id); }}
+              /> : null}
               {!userEmail ? (
                 <Button size="sm" loading={isAuthLoading} onClick={onSignIn}>
                   Sign in

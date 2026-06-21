@@ -1,6 +1,7 @@
 import { formatNumber, formatUnitBasis } from "../lib/format";
 import type { Food } from "../types";
 import { Checkbox } from "./ui";
+import { Bone } from "./Skeletons";
 
 type IngredientTableProps = {
   foods: Food[];
@@ -8,9 +9,10 @@ type IngredientTableProps = {
   checkedFoodIds: string[];
   onSelect: (food: Food) => void;
   onCheckedChange: (foodId: string, checked: boolean) => void;
+  isLoading?: boolean;
 };
 
-export function IngredientTable({ foods, selectedFoodId, checkedFoodIds, onSelect, onCheckedChange }: IngredientTableProps) {
+export function IngredientTable({ foods, selectedFoodId, checkedFoodIds, onSelect, onCheckedChange, isLoading = false }: IngredientTableProps) {
   return (
     <div className="table-wrap">
       <table>
@@ -24,8 +26,12 @@ export function IngredientTable({ foods, selectedFoodId, checkedFoodIds, onSelec
             <th>Basis</th>
           </tr>
         </thead>
-        <tbody>
-          {foods.map((food) => (
+        <tbody aria-busy={isLoading}>
+          {isLoading ? Array.from({ length: 9 }, (_, row) => (
+            <tr className="skeleton-ingredient-row" key={row}>
+              {Array.from({ length: 6 }, (_, cell) => <td key={cell}><Bone className={cell === 1 ? "skeleton-copy wide" : "skeleton-copy"} /></td>)}
+            </tr>
+          )) : foods.map((food) => (
             <tr
               className={food.id === selectedFoodId ? "ingredient-row selected" : "ingredient-row"}
               onClick={() => onSelect(food)}

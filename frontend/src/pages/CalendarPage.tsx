@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import Draggable from "react-draggable";
 import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconGripVertical, IconPlus, IconX } from "@tabler/icons-react";
 import { CalorieTargetCard } from "../components/CalorieTargetCard";
+import { Bone } from "../components/Skeletons";
 import { Button, IconButton, MobileEditor, MobileFab, NumericInput, Panel, SegmentedControl, SelectInput, TextInput } from "../components/ui";
 import {
   addDays,
@@ -26,6 +27,7 @@ type CalendarPageProps = {
   onMealPlanChange: (mealPlan: MealPlan) => void;
   onSelectedDateChange: (date: Date) => void;
   onEditRecipe: (recipe: Recipe) => void;
+  isLoading?: boolean;
 };
 
 const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "short" });
@@ -38,7 +40,8 @@ export function CalendarPage({
   selectedDate,
   onMealPlanChange,
   onSelectedDateChange,
-  onEditRecipe
+  onEditRecipe,
+  isLoading = false
 }: CalendarPageProps) {
   const [view, setView] = useState<"today" | "week">("today");
   const [weekOffset, setWeekOffset] = useState(0);
@@ -178,6 +181,7 @@ export function CalendarPage({
             target={currentTdeeTarget}
             title={view === "today" ? "Selected day" : "Daily average"}
             subtitle={view === "today" ? "Planned calories for this date." : "Average planned calories across this week."}
+            isLoading={isLoading}
           />
           <div className="section-header">
             <div>
@@ -222,7 +226,7 @@ export function CalendarPage({
                     <div className="calendar-slot-group today-slot" data-calendar-slot={slot.id} key={slot.id}>
                       <span className="muted strong">{slot.label}</span>
                       <div className="list-stack">
-                        {plannedMeals.map((entry, index) => {
+                        {isLoading ? <Bone className="skeleton-calendar-meal" /> : plannedMeals.map((entry, index) => {
                           const recipeId = getPlannedRecipeId(entry);
                           const recipe = recipes.find((item) => item.id === recipeId);
                           if (!recipe) {
@@ -326,8 +330,8 @@ export function CalendarPage({
                           return (
                             <div className="calendar-slot-group overview-slot" key={slot.id}>
                               <span className="muted small strong">{slot.label}</span>
-                              {plannedMeals.length === 0 ? <span className="muted small">Empty</span> : null}
-                              {plannedMeals.map((entry, index) => {
+                              {isLoading ? <Bone className="skeleton-calendar-overview-meal" /> : plannedMeals.length === 0 ? <span className="muted small">Empty</span> : null}
+                              {!isLoading ? plannedMeals.map((entry, index) => {
                                 const recipeId = getPlannedRecipeId(entry);
                                 const recipe = recipes.find((item) => item.id === recipeId);
                                 return recipe ? (
@@ -340,7 +344,7 @@ export function CalendarPage({
                                     {recipe.name}
                                   </button>
                                 ) : null;
-                              })}
+                              }) : null}
                             </div>
                           );
                         })}

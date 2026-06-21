@@ -27,7 +27,7 @@ type ApiServices = {
 export function createApiHandler(services: ApiServices) {
   return async function handleApi(request: IncomingMessage, response: ServerResponse, url: URL) {
     try {
-      const auth = getAuthContext(request.headers.authorization);
+      const auth = getAuthContext(request.headers.authorization, request.headers["x-kitchen-id"]);
 
       if (request.method === "GET" && url.pathname === "/api/health") {
         return sendJson(response, 200, {

@@ -33,6 +33,11 @@ export function MealCard({
   onPortionChange,
   onFavoriteToggle
 }: MealCardProps) {
+  const totalWeight = Number(recipe.total_weight_g || 0);
+  const servings = totalWeight > 0 && portionTotals.weight > 0
+    ? Math.round((totalWeight / portionTotals.weight) * 100) / 100
+    : 1;
+
   return (
     <div
       role="button"
@@ -84,13 +89,23 @@ export function MealCard({
         onClick={(event) => event.stopPropagation()}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <NumericInput
-          label="Portion (g)"
-          value={portionTotals.weight}
-          onChange={onPortionChange}
-          min={0}
-          step={0.1}
-        />
+        <div className="card-portion-inputs">
+          <NumericInput
+            label="Portion (g)"
+            value={portionTotals.weight}
+            onChange={onPortionChange}
+            min={0}
+            step={0.1}
+          />
+          <NumericInput
+            label="Servings"
+            value={servings}
+            onChange={(value) => onPortionChange(value > 0 ? totalWeight / value : totalWeight)}
+            min={1}
+            step={1}
+            disabled={totalWeight <= 0}
+          />
+        </div>
         <div className="portion-results">
           <div className="card-portion-metric">
             <span className="muted small strong">Calories</span>

@@ -8,6 +8,7 @@ import {
   getHealth,
   getRecipes,
   setApiAccessToken,
+  setApiKitchenId,
   updateFood,
   updateRecipe
 } from "../api";
@@ -43,7 +44,7 @@ function getInitialFavoriteRecipeIds() {
   }
 }
 
-export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToken?: string) {
+export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToken?: string, kitchenId?: string) {
   const [health, setHealth] = useState<Health | null>(null);
   const [foods, setFoods] = useState<Food[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -58,6 +59,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   const pendingFavoriteIdsRef = useRef(new Set<string>());
   const [message, setMessage] = useState("Loading recipe tracker...");
   const [recipeMessage, setRecipeMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isSavingFood, setIsSavingFood] = useState(false);
   const [isSavingRecipe, setIsSavingRecipe] = useState(false);
 
@@ -83,14 +85,19 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
 
   useEffect(() => {
     setApiAccessToken(accessToken);
-  }, [accessToken]);
+    setApiKitchenId(kitchenId);
+  }, [accessToken, kitchenId]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function load() {
+      setIsLoading(true);
       try {
         const nextHealth = await getHealth();
+        if (!isMounted) return;
         setHealth(nextHealth);
-        if (nextHealth.supabaseConfigured && !accessToken) {
+        if (nextHealth.supabaseConfigured && (!accessToken || !kitchenId)) {
           setFoods([]);
           setRecipes([]);
           setMessage("Sign in to load your ingredients.");
@@ -98,16 +105,37 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
           return;
         }
 
-        await refresh();
+        const [nextFoods, nextRecipes] = await Promise.all([getFoods(), getRecipes()]);
+        if (!isMounted) return;
+        setFoods(nextFoods);
+        setRecipes(nextRecipes);
         setMessage("");
         setRecipeMessage("");
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Could not load app data.");
+        if (isMounted) {
+          setMessage(error instanceof Error ? error.message : "Could not load app data.");
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     }
 
     void load();
-  }, [accessToken]);
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, kitchenId]);
+
+  useEffect(() => {
+    if (!supabase || !accessToken || !kitchenId) return;
+    const channel = supabase
+      .channel(`kitchen-content-${kitchenId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "foods", filter: `kitchen_id=eq.${kitchenId}` }, () => void refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipes", filter: `kitchen_id=eq.${kitchenId}` }, () => void refresh())
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ingredients" }, () => void refresh())
+      .subscribe();
+    return () => { void supabase?.removeChannel(channel); };
+  }, [accessToken, kitchenId]);
 
   useEffect(() => {
     window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoriteRecipeIds));
@@ -189,7 +217,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
         void supabaseClient.removeChannel(channel);
       }
     };
-  }, [accessToken]);
+  }, [accessToken, kitchenId]);
 
   useEffect(() => {
     if (recipes.length > 0) {
@@ -531,6 +559,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     ingredientWeightTotal,
     message,
     recipeMessage,
+    isLoading,
     isSavingFood,
     isSavingRecipe,
     saveFood,

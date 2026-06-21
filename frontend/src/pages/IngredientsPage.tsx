@@ -17,6 +17,7 @@ type IngredientsPageProps = {
   foodForm: NewFood;
   isEditing: boolean;
   isSaving: boolean;
+  isLoading?: boolean;
   message: string;
   onFoodChange: (food: NewFood) => void;
   onCaloriesChange: (calories: number) => void;
@@ -36,6 +37,7 @@ export function IngredientsPage({
   foodForm,
   isEditing,
   isSaving,
+  isLoading = false,
   message,
   onFoodChange,
   onCaloriesChange,
@@ -189,6 +191,7 @@ export function IngredientsPage({
             checkedFoodIds={checkedFoodIds}
             onSelect={editIngredient}
             onCheckedChange={setFoodChecked}
+            isLoading={isLoading}
           />
 
           <Pagination

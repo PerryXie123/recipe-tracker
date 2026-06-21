@@ -16,7 +16,7 @@ export function createFoodService({ supabaseConfigured, createSupabase }: FoodSe
     }
 
     const supabase = getSupabaseForUser(auth);
-    return supabase<Food[]>("foods?select=*&order=name.asc");
+    return supabase<Food[]>(`foods?select=*&${getKitchenFilter(auth)}&order=name.asc`);
   }
 
   async function createFood(payload: NewFoodPayload, auth: AuthContext): Promise<Food> {
@@ -31,7 +31,7 @@ export function createFoodService({ supabaseConfigured, createSupabase }: FoodSe
     const supabase = getSupabaseForUser(auth);
     const [created] = await supabase<Food[]>("foods", {
       method: "POST",
-      body: JSON.stringify({ ...food, user_id: auth.userId })
+      body: JSON.stringify({ ...food, user_id: auth.userId, kitchen_id: requireKitchen(auth), created_by: auth.userId })
     });
 
     if (!created) {
@@ -109,6 +109,15 @@ export function createFoodService({ supabaseConfigured, createSupabase }: FoodSe
     }
 
     return createSupabase(auth.accessToken);
+  }
+
+  function requireKitchen(auth: AuthContext) {
+    if (!auth.kitchenId) throw badRequest("Select a kitchen first.");
+    return auth.kitchenId;
+  }
+
+  function getKitchenFilter(auth: AuthContext) {
+    return filterEq("kitchen_id", requireKitchen(auth));
   }
 }
 
