@@ -144,6 +144,16 @@ export function useKitchens(userId?: string) {
     await refresh();
   }
 
+  async function deleteKitchen(kitchenId: string, confirmationName: string) {
+    if (!supabase) return;
+    const { error } = await supabase.rpc("delete_kitchen", {
+      p_kitchen_id: kitchenId,
+      p_confirmation_name: confirmationName
+    });
+    if (error) throw error;
+    await refresh();
+  }
+
   return { kitchens, activeKitchenId, activeKitchen: kitchens.find((k) => k.id === activeKitchenId), members, invites, loading, message,
-    setMessage, setActiveKitchenId, createKitchen, joinKitchen, renameKitchen, inviteByEmail, acceptInvite, declineInvite, removeMember };
+    setMessage, setActiveKitchenId, createKitchen, joinKitchen, renameKitchen, inviteByEmail, acceptInvite, declineInvite, removeMember, deleteKitchen };
 }

@@ -14,6 +14,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { TdeePage } from "./pages/TdeePage";
 import { PageSkeleton } from "./components/Skeletons";
+import { BrandMark } from "./components/BrandMark";
 import { useKitchens } from "./hooks/useKitchens";
 import { KitchensPage } from "./pages/KitchensPage";
 
@@ -147,6 +148,10 @@ export function App() {
   }
 
   const tracker = useRecipeTracker((nextRoute) => navigate(nextRoute), auth.accessToken, kitchenState.activeKitchenId);
+  const planningRecipes = tracker.allKitchenRecipes.map((recipe) => ({
+    ...recipe,
+    kitchen_name: kitchenState.kitchens.find((kitchen) => kitchen.id === recipe.kitchen_id)?.name || "Kitchen"
+  }));
   const isPageLoading = route === "home" && (tracker.isLoading || !isRemoteStateLoaded);
 
   useLayoutEffect(() => {
@@ -376,8 +381,8 @@ export function App() {
       {auth.isAuthLoading ? (
         <div className="auth-loading-screen">
           <div className="brand">
-            <span className="brand-mark">P</span>
-            <strong>Plateful</strong>
+            <BrandMark />
+            <strong>My Kitchen</strong>
           </div>
           <div className="auth-loading-copy" role="status" aria-label="Restoring your session">
             <span className="skeleton skeleton-title" aria-hidden="true" />
@@ -420,13 +425,19 @@ export function App() {
           <HomePage
             foods={tracker.foods}
             recipes={tracker.recipes}
+            planningRecipes={planningRecipes}
             mealPlan={mealPlan}
             currentTdeeTarget={currentTdeeTarget}
             currentProteinTarget={currentProteinTarget}
             userName={auth.userName}
             onNavigate={navigate}
             onEditFood={tracker.editFood}
-            onEditRecipe={tracker.editRecipe}
+            onEditRecipe={(recipe) => {
+              if (recipe.kitchen_id && recipe.kitchen_id !== kitchenState.activeKitchenId) {
+                void kitchenState.setActiveKitchenId(recipe.kitchen_id);
+              }
+              tracker.editRecipe(recipe);
+            }}
           />
         ) : null}
 
@@ -489,11 +500,17 @@ export function App() {
         {route === "favorites" ? (
           <FavoritesPage
             recipes={tracker.recipes}
+            allKitchenRecipes={planningRecipes}
             favoriteRecipeIds={tracker.favoriteRecipeIds}
             portionWeights={tracker.portionWeights}
             onPortionWeightsChange={tracker.setPortionWeights}
             getPortionTotals={tracker.getPortionTotals}
-            onEdit={tracker.editRecipe}
+            onEdit={(recipe) => {
+              if (recipe.kitchen_id && recipe.kitchen_id !== kitchenState.activeKitchenId) {
+                void kitchenState.setActiveKitchenId(recipe.kitchen_id);
+              }
+              tracker.editRecipe(recipe);
+            }}
             onFavoriteToggle={tracker.toggleFavoriteRecipe}
             isLoading={tracker.isLoading}
           />
@@ -501,15 +518,20 @@ export function App() {
 
         {route === "calendar" ? (
           <CalendarPage
-            recipes={tracker.recipes}
+            recipes={planningRecipes}
             favoriteRecipeIds={tracker.favoriteRecipeIds}
             mealPlan={mealPlan}
             currentTdeeTarget={currentTdeeTarget}
             selectedDate={calendarSelectedDate}
             onMealPlanChange={setMealPlan}
             onSelectedDateChange={setCalendarSelectedDate}
-            onEditRecipe={tracker.editRecipe}
-            isLoading={tracker.isLoading || !isRemoteStateLoaded}
+            onEditRecipe={(recipe) => {
+              if (recipe.kitchen_id && recipe.kitchen_id !== kitchenState.activeKitchenId) {
+                void kitchenState.setActiveKitchenId(recipe.kitchen_id);
+              }
+              tracker.editRecipe(recipe);
+            }}
+            isLoading={tracker.isLoadingPlanningRecipes || !isRemoteStateLoaded}
           />
         ) : null}
 
@@ -537,6 +559,7 @@ export function App() {
             onAcceptInvite={kitchenState.acceptInvite}
             onDeclineInvite={kitchenState.declineInvite}
             onRemoveMember={kitchenState.removeMember}
+            onDeleteKitchen={kitchenState.deleteKitchen}
           />
         ) : null}
           </>

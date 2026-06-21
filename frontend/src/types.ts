@@ -21,6 +21,8 @@ export type Ingredient = {
 
 export type Recipe = {
   id: string;
+  kitchen_id?: string | null;
+  kitchen_name?: string | null;
   name: string;
   category?: string | null;
   target_plan?: string | null;

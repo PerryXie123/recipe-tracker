@@ -10,7 +10,7 @@ type RecipeServiceOptions = {
 };
 
 export function createRecipeService({ supabaseConfigured, createSupabase }: RecipeServiceOptions) {
-  async function getRecipes(auth: AuthContext): Promise<RecipeWithTotals[]> {
+  async function getRecipes(auth: AuthContext, options?: { allKitchens?: boolean }): Promise<RecipeWithTotals[]> {
     if (!supabaseConfigured) {
       return [...demoRecipes]
         .sort((first, second) => Number(new Date(second.created_at || 0)) - Number(new Date(first.created_at || 0)))
@@ -18,7 +18,8 @@ export function createRecipeService({ supabaseConfigured, createSupabase }: Reci
     }
 
     const supabase = getSupabaseForUser(auth);
-    const recipes = await supabase<SupabaseRecipe[]>(`recipes?select=*&${getKitchenFilter(auth)}&order=created_at.desc`);
+    const kitchenFilter = options?.allKitchens ? "" : `${getKitchenFilter(auth)}&`;
+    const recipes = await supabase<SupabaseRecipe[]>(`recipes?select=*&${kitchenFilter}order=created_at.desc`);
     const ingredients = await supabase<SupabaseIngredient[]>(
       "recipe_ingredients?select=id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label,unit_weight_g)"
     );

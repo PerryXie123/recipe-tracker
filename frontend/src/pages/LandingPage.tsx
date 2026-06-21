@@ -7,6 +7,7 @@ import {
   IconSun,
   IconToolsKitchen2
 } from "@tabler/icons-react";
+import { BrandMark } from "../components/BrandMark";
 import { Button, IconButton } from "../components/ui";
 
 type LandingPageProps = {
@@ -36,8 +37,8 @@ export function LandingPage({
     <div className="landing-shell">
       <header className="landing-nav">
         <div className="brand">
-          <span className="brand-mark">P</span>
-          <strong>Plateful</strong>
+          <BrandMark />
+          <strong>My Kitchen</strong>
         </div>
         <div className="topbar-actions">
           <IconButton label="Toggle colour scheme" onClick={onThemeChange}>
@@ -53,7 +54,7 @@ export function LandingPage({
         <section className="landing-hero">
           <div className="landing-copy-block">
             <span className="landing-kicker">Meal planning from your own ingredients</span>
-            <h1 className="landing-title">Plateful</h1>
+            <h1 className="landing-title">My Kitchen</h1>
             <p className="landing-copy">
               Keep your ingredient library, favourite meals, portions, calories, and weekly plan in one calm workspace.
             </p>
@@ -85,7 +86,7 @@ export function LandingPage({
           </div>
         </section>
 
-        <section className="landing-step-grid" aria-label="Plateful workflow">
+        <section className="landing-step-grid" aria-label="My Kitchen workflow">
           {landingSteps.map((step) => (
             <div className="landing-step" key={step.title}>
               <step.icon size={22} />

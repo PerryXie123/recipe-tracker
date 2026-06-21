@@ -44,5 +44,5 @@ createServer(async (request, response) => {
 
   sendJson(response, 404, { error: "Not found" });
 }).listen(port, () => {
-  console.log(`Recipe Tracker API running at http://127.0.0.1:${port}`);
+  console.log(`My Kitchen API running at http://127.0.0.1:${port}`);
 });

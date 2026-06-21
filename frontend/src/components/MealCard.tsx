@@ -5,6 +5,7 @@ import { Badge, Checkbox, IconButton, NumericInput } from "./ui";
 
 type MealCardProps = {
   recipe: Recipe;
+  displayName?: string;
   selected: boolean;
   checked: boolean;
   selectable?: boolean;
@@ -23,6 +24,7 @@ type MealCardProps = {
 
 export function MealCard({
   recipe,
+  displayName,
   selected,
   checked,
   selectable = true,
@@ -33,6 +35,7 @@ export function MealCard({
   onPortionChange,
   onFavoriteToggle
 }: MealCardProps) {
+  const mealName = displayName || recipe.name;
   const totalWeight = Number(recipe.total_weight_g || 0);
   const servings = totalWeight > 0 && portionTotals.weight > 0
     ? Math.round((totalWeight / portionTotals.weight) * 100) / 100
@@ -53,13 +56,13 @@ export function MealCard({
     >
       <div className="card-header">
         <div>
-          <h3>{recipe.name}</h3>
+          <h3>{mealName}</h3>
           <p className="muted small">{formatNumber(recipe.total_weight_g || 0)}g total weight</p>
         </div>
         <div className="inline-actions">
           <span onClick={(event) => event.stopPropagation()} onMouseDown={(event) => event.stopPropagation()}>
             <IconButton
-              label={isFavorite ? `Remove ${recipe.name} from favourites` : `Add ${recipe.name} to favourites`}
+              label={isFavorite ? `Remove ${mealName} from favourites` : `Add ${mealName} to favourites`}
               pressed={isFavorite}
               variant={isFavorite ? "subtle" : "secondary"}
               onClick={() => onFavoriteToggle()}
@@ -70,7 +73,7 @@ export function MealCard({
           {selectable ? (
             <Checkbox
               checked={checked}
-              label={`Select ${recipe.name}`}
+              label={`Select ${mealName}`}
               onClick={(event) => event.stopPropagation()}
               onChange={onCheckedChange}
             />

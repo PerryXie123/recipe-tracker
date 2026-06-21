@@ -7,6 +7,7 @@ import {
   getFoods,
   getHealth,
   getRecipes,
+  getPlanningRecipes,
   setApiAccessToken,
   setApiKitchenId,
   updateFood,
@@ -48,6 +49,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   const [health, setHealth] = useState<Health | null>(null);
   const [foods, setFoods] = useState<Food[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [allKitchenRecipes, setAllKitchenRecipes] = useState<Recipe[]>([]);
   const [foodForm, setFoodForm] = useState<NewFood>(initialFood);
   const [recipeForm, setRecipeForm] = useState<NewRecipe>(initialRecipe);
   const [editingFoodId, setEditingFoodId] = useState<string | null>(null);
@@ -57,9 +59,10 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   const [portionWeights, setPortionWeights] = useState<Record<string, number>>({});
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<string[]>(getInitialFavoriteRecipeIds);
   const pendingFavoriteIdsRef = useRef(new Set<string>());
-  const [message, setMessage] = useState("Loading recipe tracker...");
+  const [message, setMessage] = useState("Loading My Kitchen...");
   const [recipeMessage, setRecipeMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingPlanningRecipes, setIsLoadingPlanningRecipes] = useState(true);
   const [isSavingFood, setIsSavingFood] = useState(false);
   const [isSavingRecipe, setIsSavingRecipe] = useState(false);
 
@@ -78,9 +81,21 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   }
 
   async function refresh() {
+    const [nextFoods, nextRecipes, nextAllKitchenRecipes] = await Promise.all([getFoods(), getRecipes(), getPlanningRecipes()]);
+    setFoods(nextFoods);
+    setRecipes(nextRecipes);
+    setAllKitchenRecipes(nextAllKitchenRecipes);
+  }
+
+  async function refreshCurrentKitchen() {
     const [nextFoods, nextRecipes] = await Promise.all([getFoods(), getRecipes()]);
     setFoods(nextFoods);
     setRecipes(nextRecipes);
+  }
+
+  async function refreshPlanningRecipes() {
+    const nextRecipes = await getPlanningRecipes();
+    setAllKitchenRecipes(nextRecipes);
   }
 
   useEffect(() => {
@@ -127,12 +142,31 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
   }, [accessToken, kitchenId]);
 
   useEffect(() => {
-    if (!supabase || !accessToken || !kitchenId) return;
+    let isMounted = true;
+    if (!accessToken) {
+      setAllKitchenRecipes([]);
+      setIsLoadingPlanningRecipes(false);
+      return;
+    }
+    setIsLoadingPlanningRecipes(true);
+    getPlanningRecipes()
+      .then((nextRecipes) => { if (isMounted) setAllKitchenRecipes(nextRecipes); })
+      .catch((error) => { if (isMounted) setRecipeMessage(error instanceof Error ? error.message : "Could not load meals for planning."); })
+      .finally(() => { if (isMounted) setIsLoadingPlanningRecipes(false); });
+    return () => { isMounted = false; };
+  }, [accessToken, kitchenId]);
+
+  useEffect(() => {
+    if (!supabase || !accessToken) return;
+    const refreshGlobalAndCurrent = () => {
+      void refreshPlanningRecipes();
+      if (kitchenId) void refreshCurrentKitchen();
+    };
     const channel = supabase
-      .channel(`kitchen-content-${kitchenId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "foods", filter: `kitchen_id=eq.${kitchenId}` }, () => void refresh())
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipes", filter: `kitchen_id=eq.${kitchenId}` }, () => void refresh())
-      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ingredients" }, () => void refresh())
+      .channel(`global-planning-recipes-${accessToken.slice(-8)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "foods" }, refreshGlobalAndCurrent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipes" }, refreshGlobalAndCurrent)
+      .on("postgres_changes", { event: "*", schema: "public", table: "recipe_ingredients" }, refreshGlobalAndCurrent)
       .subscribe();
     return () => { void supabase?.removeChannel(channel); };
   }, [accessToken, kitchenId]);
@@ -218,12 +252,6 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
       }
     };
   }, [accessToken, kitchenId]);
-
-  useEffect(() => {
-    if (recipes.length > 0) {
-      setFavoriteRecipeIds((currentIds) => currentIds.filter((recipeId) => recipes.some((recipe) => recipe.id === recipeId)));
-    }
-  }, [recipes]);
 
   const mealTotals = useMemo(() => {
     return recipes.reduce(
@@ -369,7 +397,9 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
       total_weight_g: Number(recipe.total_weight_g || 0),
       ingredients
     });
-    setIngredientQueries(ingredients.map((ingredient) => foods.find((food) => food.id === ingredient.food_id)?.name || ""));
+    setIngredientQueries(ingredients.map((ingredient, index) =>
+      foods.find((food) => food.id === ingredient.food_id)?.name || recipe.ingredients[index]?.food_name || ""
+    ));
     setIsTotalWeightManual(true);
     setRecipeMessage("");
     onNavigate?.("meals");
@@ -547,6 +577,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     health,
     foods,
     recipes,
+    allKitchenRecipes,
     favoriteRecipeIds,
     mealTotals,
     foodForm,
@@ -560,6 +591,7 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     message,
     recipeMessage,
     isLoading,
+    isLoadingPlanningRecipes,
     isSavingFood,
     isSavingRecipe,
     saveFood,

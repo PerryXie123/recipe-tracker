@@ -13,7 +13,7 @@ type ApiServices = {
     deleteFood: (id: string, auth: AuthContext, options?: { removeReferences?: boolean }) => Promise<unknown>;
   };
   recipes: {
-    getRecipes: (auth: AuthContext) => Promise<unknown>;
+    getRecipes: (auth: AuthContext, options?: { allKitchens?: boolean }) => Promise<unknown>;
     createRecipe: (payload: NewRecipePayload, auth: AuthContext) => Promise<unknown>;
     updateRecipe: (id: string, payload: NewRecipePayload, auth: AuthContext) => Promise<unknown>;
     deleteRecipe: (id: string, auth: AuthContext) => Promise<unknown>;
@@ -68,7 +68,13 @@ export function createApiHandler(services: ApiServices) {
       }
 
       if (request.method === "GET" && url.pathname === "/api/recipes") {
-        return sendJson(response, 200, await services.recipes.getRecipes(auth));
+        return sendJson(response, 200, await services.recipes.getRecipes(auth, {
+          allKitchens: url.searchParams.get("allKitchens") === "true"
+        }));
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/planning-recipes") {
+        return sendJson(response, 200, await services.recipes.getRecipes(auth, { allKitchens: true }));
       }
 
       if (request.method === "POST" && url.pathname === "/api/recipes") {

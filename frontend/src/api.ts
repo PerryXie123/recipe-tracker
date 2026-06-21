@@ -56,6 +56,65 @@ export function getRecipes() {
   return request<Recipe[]>("/api/recipes");
 }
 
+export function getPlanningRecipes() {
+  if (supabase) {
+    return getSupabasePlanningRecipes();
+  }
+  return request<Recipe[]>("/api/planning-recipes");
+}
+
+async function getSupabasePlanningRecipes(): Promise<Recipe[]> {
+  if (!supabase) return [];
+  const [recipesResult, ingredientsResult] = await Promise.all([
+    supabase.from("recipes").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("recipe_ingredients")
+      .select("id,recipe_id,quantity,foods(id,name,calories_per_unit,kj_per_unit,protein_per_unit,unit_label,unit_weight_g)")
+  ]);
+  if (recipesResult.error) throw recipesResult.error;
+  if (ingredientsResult.error) throw ingredientsResult.error;
+
+  type FoodRow = {
+    id: string;
+    name: string;
+    calories_per_unit: number | string;
+    kj_per_unit: number | string;
+    protein_per_unit: number | string;
+    unit_label: string;
+    unit_weight_g: number | string | null;
+  };
+  type IngredientRow = { recipe_id: string; quantity: number | string; foods: FoodRow | FoodRow[] | null };
+  const ingredientRows = (ingredientsResult.data || []) as unknown as IngredientRow[];
+
+  return (recipesResult.data || []).map((recipe) => {
+    const ingredients = ingredientRows
+      .filter((row) => row.recipe_id === recipe.id)
+      .flatMap((row) => {
+        const food = Array.isArray(row.foods) ? row.foods[0] : row.foods;
+        if (!food) return [];
+        const quantity = Number(row.quantity);
+        const basis = food.unit_label === "100g" ? 100 : Math.max(Number(food.unit_weight_g || 100), 0.01);
+        return [{
+          food_id: food.id,
+          food_name: food.name,
+          weight_g: quantity,
+          calories: (Number(food.calories_per_unit) * quantity) / basis,
+          kj: (Number(food.kj_per_unit) * quantity) / basis,
+          protein: (Number(food.protein_per_unit) * quantity) / basis
+        }];
+      });
+
+    return {
+      ...recipe,
+      total_weight_g: Number(recipe.total_weight_g || ingredients.reduce((sum, item) => sum + item.weight_g, 0)),
+      calories: Math.round(ingredients.reduce((sum, item) => sum + item.calories, 0)),
+      kj: Math.round(ingredients.reduce((sum, item) => sum + item.kj, 0) * 10) / 10,
+      protein: Math.round(ingredients.reduce((sum, item) => sum + item.protein, 0) * 10) / 10,
+      ingredients
+    } as Recipe;
+  });
+}
+
 export type UserState = {
   tdeeTarget: number | null;
   proteinTarget: number | null;

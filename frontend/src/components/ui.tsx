@@ -182,6 +182,7 @@ type Option = {
 
 type SelectInputProps = {
   label?: string;
+  ariaLabel?: string;
   value: string | null;
   options: Option[];
   className?: string;
@@ -189,9 +190,10 @@ type SelectInputProps = {
   onChange: (value: string | null) => void;
 };
 
-export function SelectInput({ label, value, options, className = "", placeholder = "Select", onChange }: SelectInputProps) {
+export function SelectInput({ label, ariaLabel, value, options, className = "", placeholder = "Select", onChange }: SelectInputProps) {
   return (
     <Select
+      aria-label={ariaLabel}
       className={`select-field ${className}`.trim()}
       selectedKey={value}
       onSelectionChange={(key) => onChange(key ? String(key) : null)}

@@ -19,6 +19,7 @@ import type { Health } from "../types";
 import type { Kitchen } from "../hooks/useKitchens";
 import type { Route } from "../lib/routing";
 import { Button, IconButton, SelectInput } from "./ui";
+import { BrandMark } from "./BrandMark";
 
 type LayoutProps = {
   route: Route;
@@ -118,10 +119,10 @@ export function Layout({
     <div className={isNavOpen ? "app-shell nav-open" : "app-shell"}>
       <div className="app-frame">
         <button className="nav-backdrop" type="button" aria-label="Close menu" onClick={() => setIsNavOpen(false)} />
-        <aside className="sidebar" aria-label="Plateful navigation">
+        <aside className="sidebar" aria-label="My Kitchen navigation">
           <button className="brand sidebar-brand" type="button" onClick={() => handleNavigate("home")}>
-            <span className="brand-mark">P</span>
-            <strong>Plateful</strong>
+            <BrandMark />
+            <strong>My Kitchen</strong>
           </button>
 
           <div className="sidebar-section">
@@ -147,7 +148,7 @@ export function Layout({
               <div className="sidebar-profile">
                 <span className="avatar">{initials}</span>
                 <span>
-                  <strong>{userName || "Plateful"}</strong>
+                  <strong>{userName || "My Kitchen"}</strong>
                   <small>{userEmail}</small>
                 </span>
               </div>
@@ -201,12 +202,13 @@ export function Layout({
               {isNavOpen ? <IconX size={18} /> : <IconMenu2 size={18} />}
             </IconButton>
             <button className="mobile-header-brand" type="button" onClick={() => handleNavigate("home")}>
-              <span className="brand-mark">P</span>
-              <strong>Plateful</strong>
+              <BrandMark />
+              <strong>My Kitchen</strong>
             </button>
             <div className="topbar-actions">
               {userEmail && kitchens.length ? <SelectInput
                 className="kitchen-switcher"
+                ariaLabel="Current kitchen"
                 value={activeKitchenId || null}
                 options={kitchens.map((kitchen) => ({ value: kitchen.id, label: kitchen.name }))}
                 onChange={(id) => { if (id) onKitchenChange(id); }}
@@ -224,6 +226,15 @@ export function Layout({
               <h1>{pageTitle}</h1>
               <p className="muted">{routeTitles[route].description}</p>
             </div>
+            {userEmail && kitchens.length ? <div className="desktop-kitchen-switcher">
+              <span>Current kitchen</span>
+              <SelectInput
+                ariaLabel="Current kitchen"
+                value={activeKitchenId || null}
+                options={kitchens.map((kitchen) => ({ value: kitchen.id, label: kitchen.name }))}
+                onChange={(id) => { if (id) onKitchenChange(id); }}
+              />
+            </div> : null}
           </div>
 
           {!authConfigured && authConfigMessage ? (

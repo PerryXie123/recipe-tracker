@@ -254,11 +254,11 @@ export function CalendarPage({
                               }}
                             >
                               <div className="calendar-meal-pill large">
-                              <span className="calendar-meal-drag-handle" aria-label={`Move ${recipe.name}`} title="Drag to another meal slot">
+                              <span className="calendar-meal-drag-handle" aria-label={`Move ${getPlanningRecipeName(recipe)}`} title="Drag to another meal slot">
                                 <IconGripVertical aria-hidden="true" size={18} />
                               </span>
                               <button type="button" onClick={() => onEditRecipe(recipe)}>
-                                <span>{recipe.name}</span>
+                                <span>{getPlanningRecipeName(recipe)}</span>
                                 <small className="calendar-meal-nutrition">
                                   <span>{formatNumber(portionCalories)} cal</span>
                                   <span>{formatNumber(portionProtein)}g protein</span>
@@ -273,7 +273,7 @@ export function CalendarPage({
                                 onChange={(value) => updatePortion(selectedDateKey, slot.id, index, value)}
                               />
                               <IconButton
-                                label={`Remove ${recipe.name}`}
+                                label={`Remove ${getPlanningRecipeName(recipe)}`}
                                 variant="subtle"
                                 onClick={() => removeRecipe(selectedDateKey, slot.id, index)}
                               >
@@ -341,7 +341,7 @@ export function CalendarPage({
                                     onClick={() => onEditRecipe(recipe)}
                                     key={`${recipeId}-${index}`}
                                   >
-                                    {recipe.name}
+                                    {getPlanningRecipeName(recipe)}
                                   </button>
                                 ) : null;
                               }) : null}
@@ -425,6 +425,7 @@ function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (rec
   const matches = query
     ? recipes.filter((recipe) =>
         recipe.name.toLowerCase().includes(query) ||
+        (recipe.kitchen_name || "").toLowerCase().includes(query) ||
         (recipe.category || "").toLowerCase().includes(query) ||
         recipe.ingredients.some((ingredient) => ingredient.food_name.toLowerCase().includes(query))
       )
@@ -450,7 +451,7 @@ function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (rec
         {visibleMatches.map((recipe) => (
           <button className="calendar-add-option" type="button" onClick={() => handleAdd(recipe.id)} key={recipe.id}>
             <span>
-              <strong>{recipe.name}</strong>
+              <strong>{getPlanningRecipeName(recipe)}</strong>
               <small>{formatNumber(recipe.calories)} cal - {formatNumber(recipe.protein)}g protein</small>
             </span>
             <IconPlus size={16} />
@@ -462,6 +463,10 @@ function CalendarMealSearch({ recipes, onAdd }: { recipes: Recipe[]; onAdd: (rec
       ) : null}
     </div>
   );
+}
+
+function getPlanningRecipeName(recipe: Recipe) {
+  return `${recipe.name} (${recipe.kitchen_name || "Kitchen"})`;
 }
 
 function getDateCalories(dayPlan: MealPlan[string] | undefined, recipes: Recipe[]) {

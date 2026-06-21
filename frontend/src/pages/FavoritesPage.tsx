@@ -11,6 +11,7 @@ const FAVOURITES_PER_PAGE = 12;
 
 type FavoritesPageProps = {
   recipes: Recipe[];
+  allKitchenRecipes: Recipe[];
   favoriteRecipeIds: string[];
   portionWeights: Record<string, number>;
   onPortionWeightsChange: (weights: Record<string, number>) => void;
@@ -22,6 +23,7 @@ type FavoritesPageProps = {
 
 export function FavoritesPage({
   recipes,
+  allKitchenRecipes,
   favoriteRecipeIds,
   portionWeights,
   onPortionWeightsChange,
@@ -32,15 +34,16 @@ export function FavoritesPage({
 }: FavoritesPageProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<LibrarySort>("name-asc");
+  const [scope, setScope] = useState<"current" | "all">("current");
   const [page, setPage] = useState(1);
 
   useEffect(() => {
     setPage(1);
-  }, [search, sort, favoriteRecipeIds.length]);
+  }, [search, sort, scope, favoriteRecipeIds.length]);
 
   const favoriteRecipes = useMemo(
-    () => recipes.filter((recipe) => favoriteRecipeIds.includes(recipe.id)),
-    [favoriteRecipeIds, recipes]
+    () => (scope === "current" ? recipes : allKitchenRecipes).filter((recipe) => favoriteRecipeIds.includes(recipe.id)),
+    [allKitchenRecipes, favoriteRecipeIds, recipes, scope]
   );
 
   const filteredRecipes = useMemo(() => {
@@ -49,7 +52,9 @@ export function FavoritesPage({
       const ingredientMatch = recipe.ingredients.some((ingredient) =>
         ingredient.food_name.toLowerCase().includes(query)
       );
-      return recipe.name.toLowerCase().includes(query) || (recipe.category || "").toLowerCase().includes(query) || ingredientMatch;
+      return recipe.name.toLowerCase().includes(query) ||
+        (recipe.kitchen_name || "").toLowerCase().includes(query) ||
+        (recipe.category || "").toLowerCase().includes(query) || ingredientMatch;
     }) : favoriteRecipes;
 
     return sortLibraryItems(filtered, sort, {
@@ -73,13 +78,25 @@ export function FavoritesPage({
             onChange={setSearch}
             placeholder="Search name, category, or ingredient"
           />
-          <SelectInput
-            className="sort-field"
-            label="Sort by"
-            value={sort}
-            options={librarySortOptions}
-            onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
-          />
+          <div className="favorites-filters">
+            <SelectInput
+              className="scope-field"
+              label="Show favourites from"
+              value={scope}
+              options={[
+                { value: "current", label: "Current kitchen" },
+                { value: "all", label: "All kitchens" }
+              ]}
+              onChange={(value) => setScope(value === "all" ? "all" : "current")}
+            />
+            <SelectInput
+              className="sort-field"
+              label="Sort by"
+              value={sort}
+              options={librarySortOptions}
+              onChange={(value) => setSort((value || "name-asc") as LibrarySort)}
+            />
+          </div>
         </div>
 
         {isLoading ? <MealGridSkeleton /> : filteredRecipes.length === 0 ? (
@@ -92,6 +109,7 @@ export function FavoritesPage({
             {visibleRecipes.items.map((recipe) => (
               <MealCard
                 recipe={recipe}
+                displayName={scope === "all" ? `${recipe.name} (${recipe.kitchen_name || "Kitchen"})` : recipe.name}
                 selected={false}
                 checked={false}
                 selectable={false}

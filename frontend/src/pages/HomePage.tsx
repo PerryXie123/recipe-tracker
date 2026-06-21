@@ -24,6 +24,7 @@ import type { Food, Recipe } from "../types";
 type HomePageProps = {
   foods: Food[];
   recipes: Recipe[];
+  planningRecipes: Recipe[];
   mealPlan: MealPlan;
   currentTdeeTarget: number | null;
   currentProteinTarget: number | null;
@@ -36,6 +37,7 @@ type HomePageProps = {
 export function HomePage({
   foods,
   recipes,
+  planningRecipes,
   mealPlan,
   currentTdeeTarget,
   currentProteinTarget,
@@ -47,7 +49,7 @@ export function HomePage({
   const todayPlan = mealPlan[toDateKey(new Date())] || {};
   const todayMeals = mealSlots.flatMap((slot) =>
     (todayPlan[slot.id] || []).map((entry) => {
-      const recipe = recipes.find((item) => item.id === getPlannedRecipeId(entry)) || null;
+      const recipe = planningRecipes.find((item) => item.id === getPlannedRecipeId(entry)) || null;
       const portion = recipe ? getPlannedPortion(entry, recipe.total_weight_g || 100) : 0;
       return {
         slot,
@@ -62,7 +64,7 @@ export function HomePage({
   const targetProgress = currentTdeeTarget ? Math.min(100, Math.round((todayCalories / currentTdeeTarget) * 100)) : 0;
   const weekStart = getMonday(new Date());
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
-  const weeklyTotals = weekDays.map((date) => getDateTotals(mealPlan[toDateKey(date)], recipes));
+  const weeklyTotals = weekDays.map((date) => getDateTotals(mealPlan[toDateKey(date)], planningRecipes));
   const weeklyCalories = weeklyTotals.map((total) => total.calories);
   const weeklyProtein = weeklyTotals.map((total) => total.protein);
   const nextMeal = todayMeals[0]?.recipe;
@@ -100,7 +102,7 @@ export function HomePage({
           <div className="meeting-card">
             <IconCalendarTime size={18} />
             <div>
-              <strong>{nextMeal?.name || "No meals planned today"}</strong>
+              <strong>{nextMeal ? getPlanningRecipeName(nextMeal) : "No meals planned today"}</strong>
               <p>{nextMeal ? `${formatNumber(nextMeal.calories)} cal planned today` : "Open your calendar to add meals."}</p>
             </div>
           </div>
@@ -174,14 +176,14 @@ export function HomePage({
           <div className="timeline-list">
             {mealSlots.map((slot) => {
               const slotRecipes = (todayPlan[slot.id] || [])
-                .map((entry) => recipes.find((recipe) => recipe.id === getPlannedRecipeId(entry)))
+                .map((entry) => planningRecipes.find((recipe) => recipe.id === getPlannedRecipeId(entry)))
                 .filter(Boolean) as Recipe[];
               return (
                 <div className="timeline-item" key={slot.id}>
                   <span className={slotRecipes.length ? "timeline-dot done" : "timeline-dot"} />
                   <div>
                     <small>{slot.label}</small>
-                    <strong>{slotRecipes[0]?.name || slot.label}</strong>
+                    <strong>{slotRecipes[0] ? getPlanningRecipeName(slotRecipes[0]) : slot.label}</strong>
                     <p>{slotRecipes.length ? `${slotRecipes.length} planned meal${slotRecipes.length > 1 ? "s" : ""}` : "Open slot"}</p>
                   </div>
                 </div>
@@ -301,4 +303,8 @@ function getRecipePortionValue(value: number, totalWeight: number, portionWeight
   }
 
   return value * (portionWeight / totalWeight);
+}
+
+function getPlanningRecipeName(recipe: Recipe) {
+  return `${recipe.name} (${recipe.kitchen_name || "Kitchen"})`;
 }

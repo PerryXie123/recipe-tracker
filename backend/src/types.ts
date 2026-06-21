@@ -21,6 +21,7 @@ export type Ingredient = {
 
 export type Recipe = {
   id: string;
+  kitchen_id?: string | null;
   name: string;
   category?: string | null;
   target_plan?: string | null;
@@ -58,6 +59,7 @@ export type NewRecipePayload = {
 
 export type SupabaseRecipe = {
   id: string;
+  kitchen_id?: string | null;
   name: string;
   category?: string | null;
   target_plan?: string | null;

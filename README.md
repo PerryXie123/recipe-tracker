@@ -1,5 +1,5 @@
 "# recipe-tracker" 
-# Recipe Tracker
+# My Kitchen
 
 A React + TypeScript full-stack meal planning app inspired by the original spreadsheet.
 

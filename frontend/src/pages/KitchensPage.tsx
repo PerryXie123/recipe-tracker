@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IconCheck, IconCopy, IconDoorExit, IconMail, IconPencil, IconTrash, IconUsers } from "@tabler/icons-react";
 import type { Kitchen, KitchenInvite, KitchenMember } from "../hooks/useKitchens";
-import { Button, TextInput } from "../components/ui";
+import { Button, ConfirmModal, TextInput } from "../components/ui";
 
 type Props = {
   userId: string;
@@ -18,6 +18,7 @@ type Props = {
   onAcceptInvite: (id: string) => Promise<void>;
   onDeclineInvite: (id: string) => Promise<void>;
   onRemoveMember: (kitchenId: string, userId: string) => Promise<void>;
+  onDeleteKitchen: (kitchenId: string, confirmationName: string) => Promise<void>;
 };
 
 export function KitchensPage(props: Props) {
@@ -28,6 +29,8 @@ export function KitchensPage(props: Props) {
   const [editName, setEditName] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deletingKitchen, setDeletingKitchen] = useState<Kitchen>();
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   async function run(action: () => Promise<void>) {
     setBusy(true); setNotice("");
@@ -71,11 +74,30 @@ export function KitchensPage(props: Props) {
             {owner ? <div className="kitchen-owner-tools">
               {editing === kitchen.id ? <div className="inline-kitchen-form"><TextInput label="Kitchen name" value={editName} onChange={setEditName}/><Button size="sm" onClick={() => run(async () => { await props.onRename(kitchen.id, editName); setEditing(undefined); })}>Save</Button></div> : <Button size="sm" variant="subtle" onClick={() => { setEditing(kitchen.id); setEditName(kitchen.name); }}><IconPencil size={16}/> Rename</Button>}
               <div className="inline-kitchen-form"><TextInput label="Invite by email" value={inviteEmails[kitchen.id] || ""} placeholder="friend@example.com" onChange={(value) => setInviteEmails({...inviteEmails, [kitchen.id]: value})}/><Button size="sm" variant="secondary" onClick={() => run(async () => { await props.onInvite(kitchen.id, inviteEmails[kitchen.id] || ""); setInviteEmails({...inviteEmails, [kitchen.id]: ""}); setNotice("Invitation sent. It will appear in their Kitchen Manager."); })}><IconMail size={16}/> Send invite</Button></div>
+              <div className="kitchen-danger-zone"><div><strong>Delete kitchen</strong><span>Permanently remove this kitchen and everything in it.</span></div><Button size="sm" variant="danger" onClick={() => { setDeletingKitchen(kitchen); setDeleteConfirmation(""); }}><IconTrash size={16}/> Delete kitchen</Button></div>
             </div> : null}
             <div className="member-list">{kitchenMembers.map((member) => <div className="member-row" key={member.user_id}><span className="avatar">{(member.display_name || member.email || "?")[0].toUpperCase()}</span><span><strong>{member.display_name || member.email || "Member"}</strong><small>{member.user_id === kitchen.owner_id ? "Owner" : member.email}</small></span>{member.user_id !== kitchen.owner_id && (owner || member.user_id === props.userId) ? <Button size="sm" variant="danger" onClick={() => run(() => props.onRemoveMember(kitchen.id, member.user_id))}>{owner ? <IconTrash size={15}/> : <IconDoorExit size={15}/>} {owner ? "Remove" : "Leave"}</Button> : null}</div>)}</div>
           </> : null}
         </section>;
       })}
     </div>
+    {deletingKitchen ? <ConfirmModal
+      title={`Permanently delete ${deletingKitchen.name}?`}
+      confirmLabel={busy ? "Deleting..." : "Permanently delete kitchen"}
+      disabled={busy || deleteConfirmation !== deletingKitchen.name}
+      onCancel={() => { if (!busy) { setDeletingKitchen(undefined); setDeleteConfirmation(""); } }}
+      onConfirm={() => run(async () => {
+        await props.onDeleteKitchen(deletingKitchen.id, deleteConfirmation);
+        setDeletingKitchen(undefined);
+        setDeleteConfirmation("");
+        setNotice("Kitchen permanently deleted.");
+      })}
+      body={<div className="super-warning">
+        <strong>This cannot be undone.</strong>
+        <p>Every ingredient and meal in this kitchen will be permanently deleted. Favourites, calendar entries, memberships, and pending invitations connected to them will also be removed.</p>
+        <p>Type <strong>{deletingKitchen.name}</strong> to confirm.</p>
+        <TextInput label="Kitchen name" value={deleteConfirmation} onChange={setDeleteConfirmation} />
+      </div>}
+    /> : null}
   </div>;
 }
