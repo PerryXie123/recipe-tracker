@@ -395,8 +395,9 @@ export function App() {
           authConfigMessage={auth.authConfigMessage}
           isAuthLoading={auth.isAuthLoading}
           theme={theme}
+          googleClientId={auth.googleClientId}
           onThemeChange={() => setTheme(theme === "light" ? "dark" : "light")}
-          onSignIn={auth.signInWithGoogle}
+          onGoogleCredential={auth.signInWithGoogleIdToken}
         />
       ) : (
       <Layout

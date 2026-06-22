@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { isSupabaseAuthConfigured, supabase, supabaseAuthConfigMessage } from "../lib/supabase";
+import { googleClientId, isSupabaseAuthConfigured, supabase, supabaseAuthConfigMessage } from "../lib/supabase";
 
 type AuthState = {
   accessToken?: string;
@@ -125,6 +125,12 @@ export function useAuth() {
     });
   }
 
+  async function signInWithGoogleIdToken(token: string, nonce: string) {
+    if (!supabase) throw new Error("Google sign-in is not configured.");
+    const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token, nonce });
+    if (error) throw error;
+  }
+
   async function signOut() {
     clearStoredAuthSession();
     await supabase?.auth.signOut();
@@ -135,12 +141,14 @@ export function useAuth() {
   return {
     accessToken: authState.accessToken || session?.access_token,
     authConfigured: isSupabaseAuthConfigured,
+    googleClientId,
     authConfigMessage: supabaseAuthConfigMessage,
     isAuthLoading,
     session,
     userEmail: authState.email,
     userName: authState.name,
     signInWithGoogle,
+    signInWithGoogleIdToken,
     signOut
   };
 }

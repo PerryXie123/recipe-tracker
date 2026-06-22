@@ -46,6 +46,7 @@ Frontend:
 ```bash
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-or-anon-key
+VITE_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
 ```
 
 Use the publishable/anon key for this app. Do not expose the service role key in browser code.

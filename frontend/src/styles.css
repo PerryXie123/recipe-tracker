@@ -1376,6 +1376,9 @@ th {
   margin-top: 12px;
 }
 
+.google-sign-in-wrap { display: grid; gap: 8px; justify-items: start; }
+.google-sign-in-host { min-width: 240px; min-height: 44px; }
+
 .landing-auth-banner {
   width: fit-content;
   margin: 6px 0 0;

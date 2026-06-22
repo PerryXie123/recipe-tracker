@@ -11,8 +11,8 @@ export type LibrarySort =
 export const librarySortOptions: Array<{ value: LibrarySort; label: string }> = [
   { value: "name-asc", label: "Alphabetical ↑" },
   { value: "name-desc", label: "Alphabetical ↓" },
-  { value: "created-desc", label: "Date added — newest" },
-  { value: "created-asc", label: "Date added — oldest" },
+  { value: "created-desc", label: "Date added ↓" },
+  { value: "created-asc", label: "Date added ↑" },
   { value: "protein-asc", label: "Protein ↑" },
   { value: "protein-desc", label: "Protein ↓" },
   { value: "calories-asc", label: "Calories ↑" },

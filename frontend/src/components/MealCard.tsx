@@ -111,15 +111,32 @@ export function MealCard({
         </div>
         <div className="portion-results">
           <div className="card-portion-metric">
-            <span className="muted small strong">Calories</span>
-            <strong>{formatNumber(portionTotals.calories)}</strong>
+            <NumericInput
+              label="Calories"
+              value={portionTotals.calories}
+              onChange={(value) => scalePortionFromNutrient(value, recipe.calories)}
+              min={0}
+              step={1}
+              disabled={recipe.calories <= 0 || totalWeight <= 0}
+            />
           </div>
           <div className="card-portion-metric">
-            <span className="muted small strong">Protein</span>
-            <strong>{formatNumber(portionTotals.protein)}g</strong>
+            <NumericInput
+              label="Protein (g)"
+              value={portionTotals.protein}
+              onChange={(value) => scalePortionFromNutrient(value, recipe.protein)}
+              min={0}
+              step={0.1}
+              disabled={recipe.protein <= 0 || totalWeight <= 0}
+            />
           </div>
         </div>
       </div>
     </div>
   );
+
+  function scalePortionFromNutrient(targetValue: number, recipeTotal: number) {
+    if (recipeTotal <= 0 || totalWeight <= 0) return;
+    onPortionChange((Math.max(0, targetValue) / recipeTotal) * totalWeight);
+  }
 }
