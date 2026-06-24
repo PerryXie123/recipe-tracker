@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createFood,
+  copyKitchenContent,
   createRecipe,
   deleteFood,
   deleteRecipe,
@@ -573,6 +574,32 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     }
   }
 
+  async function copyFoodsToKitchen(foodIds: string[], targetKitchenId: string) {
+    if (!kitchenId) throw new Error("Select a source kitchen first.");
+    setMessage("Copying ingredients...");
+    try {
+      const result = await copyKitchenContent(kitchenId, targetKitchenId, foodIds, []);
+      await refresh();
+      setMessage(`${result.ingredients} ingredient${result.ingredients === 1 ? "" : "s"} copied.`);
+    } catch (error) {
+      setMessage(getErrorMessage(error, "Could not copy ingredients."));
+      throw error;
+    }
+  }
+
+  async function copyRecipesToKitchen(recipeIds: string[], targetKitchenId: string) {
+    if (!kitchenId) throw new Error("Select a source kitchen first.");
+    setRecipeMessage("Copying meals and ingredients...");
+    try {
+      const result = await copyKitchenContent(kitchenId, targetKitchenId, [], recipeIds);
+      await refresh();
+      setRecipeMessage(`${result.meals} meal${result.meals === 1 ? "" : "s"} and ${result.ingredients} ingredient${result.ingredients === 1 ? "" : "s"} copied.`);
+    } catch (error) {
+      setRecipeMessage(getErrorMessage(error, "Could not copy meals."));
+      throw error;
+    }
+  }
+
   return {
     health,
     foods,
@@ -618,6 +645,14 @@ export function useRecipeTracker(onNavigate?: (route: Route) => void, accessToke
     portionWeights,
     setPortionWeights,
     getPortionTotals,
-    toggleFavoriteRecipe
+    toggleFavoriteRecipe,
+    copyFoodsToKitchen,
+    copyRecipesToKitchen
   };
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
+  return fallback;
 }

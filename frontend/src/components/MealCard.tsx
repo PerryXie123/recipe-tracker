@@ -1,4 +1,4 @@
-import { IconStar } from "@tabler/icons-react";
+import { IconCopy, IconStar } from "@tabler/icons-react";
 import { formatNumber } from "../lib/format";
 import type { Recipe } from "../types";
 import { Badge, Checkbox, IconButton, NumericInput } from "./ui";
@@ -56,7 +56,11 @@ export function MealCard({
     >
       <div className="card-header">
         <div>
-          <h3>{mealName}</h3>
+          <h3 className="copied-item-name">{mealName}{recipe.is_copied ? <span
+            className="copy-origin-icon"
+            aria-label={`Copied from ${recipe.copied_from_kitchen_name || "another kitchen"}`}
+            title={`Copied from ${recipe.copied_from_kitchen_name || "another kitchen"}`}
+          ><IconCopy size={16} /></span> : null}</h3>
           <p className="muted small">{formatNumber(recipe.total_weight_g || 0)}g total weight</p>
         </div>
         <div className="inline-actions">

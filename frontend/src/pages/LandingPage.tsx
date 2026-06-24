@@ -1,5 +1,6 @@
 import {
   IconCalendarWeek,
+  IconChevronRight,
   IconMoon,
   IconScale,
   IconSoup,
@@ -7,7 +8,6 @@ import {
   IconToolsKitchen2
 } from "@tabler/icons-react";
 import { BrandMark } from "../components/BrandMark";
-import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { Button, IconButton } from "../components/ui";
 
 type LandingPageProps = {
@@ -15,8 +15,7 @@ type LandingPageProps = {
   authConfigMessage: string | null;
   isAuthLoading: boolean;
   theme: "light" | "dark";
-  googleClientId?: string;
-  onGoogleCredential: (token: string, nonce: string) => Promise<void>;
+  onSignIn: () => void;
   onThemeChange: () => void;
 };
 
@@ -31,8 +30,7 @@ export function LandingPage({
   authConfigMessage,
   isAuthLoading,
   theme,
-  googleClientId,
-  onGoogleCredential,
+  onSignIn,
   onThemeChange
 }: LandingPageProps) {
   return (
@@ -46,7 +44,7 @@ export function LandingPage({
           <IconButton label="Toggle colour scheme" onClick={onThemeChange}>
             {theme === "dark" ? <IconSun size={17} /> : <IconMoon size={17} />}
           </IconButton>
-          <Button disabled={!authConfigured || isAuthLoading} loading={isAuthLoading} onClick={() => document.getElementById("google-sign-in")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+          <Button disabled={!authConfigured || isAuthLoading} loading={isAuthLoading} onClick={onSignIn}>
             Sign in
           </Button>
         </div>
@@ -61,7 +59,10 @@ export function LandingPage({
               Keep your ingredient library, favourite meals, portions, calories, and weekly plan in one calm workspace.
             </p>
             <div className="landing-actions">
-              {authConfigured && googleClientId ? <GoogleSignInButton clientId={googleClientId} theme={theme} onCredential={onGoogleCredential} /> : null}
+              <Button disabled={!authConfigured || isAuthLoading} loading={isAuthLoading} onClick={onSignIn}>
+                Sign in with Google
+                <IconChevronRight size={17} />
+              </Button>
             </div>
             {authConfigMessage ? <div className="auth-banner landing-auth-banner">{authConfigMessage}</div> : null}
           </div>

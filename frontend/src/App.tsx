@@ -395,9 +395,8 @@ export function App() {
           authConfigMessage={auth.authConfigMessage}
           isAuthLoading={auth.isAuthLoading}
           theme={theme}
-          googleClientId={auth.googleClientId}
           onThemeChange={() => setTheme(theme === "light" ? "dark" : "light")}
-          onGoogleCredential={auth.signInWithGoogleIdToken}
+          onSignIn={auth.signInWithGoogle}
         />
       ) : (
       <Layout
@@ -461,6 +460,9 @@ export function App() {
             onDelete={tracker.removeFood}
             onDeleteWithReferences={tracker.removeFoodAndRecipeReferences}
             onBulkDelete={tracker.removeFoods}
+            kitchens={kitchenState.kitchens}
+            activeKitchenId={kitchenState.activeKitchenId}
+            onCopy={tracker.copyFoodsToKitchen}
           />
         ) : null}
 
@@ -495,6 +497,9 @@ export function App() {
             onDelete={tracker.removeRecipe}
             onBulkDelete={tracker.removeRecipes}
             onFavoriteToggle={tracker.toggleFavoriteRecipe}
+            kitchens={kitchenState.kitchens}
+            activeKitchenId={kitchenState.activeKitchenId}
+            onCopy={tracker.copyRecipesToKitchen}
           />
         ) : null}
 

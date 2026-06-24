@@ -1,6 +1,7 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { IconTrash } from "@tabler/icons-react";
+import { IconCopy, IconTrash } from "@tabler/icons-react";
+import { CopyToKitchenModal } from "../components/CopyToKitchenModal";
 import { FoodForm } from "../components/FoodForm";
 import { IngredientTable } from "../components/IngredientTable";
 import { Pagination } from "../components/Pagination";
@@ -28,6 +29,9 @@ type IngredientsPageProps = {
   onDelete: (food: Food) => void;
   onDeleteWithReferences: (food: Food) => void;
   onBulkDelete: (foodIds: string[]) => void;
+  kitchens: Array<{ id: string; name: string }>;
+  activeKitchenId?: string;
+  onCopy: (foodIds: string[], targetKitchenId: string) => Promise<void>;
   editingFoodId: string | null;
 };
 
@@ -48,6 +52,9 @@ export function IngredientsPage({
   onDelete,
   onDeleteWithReferences,
   onBulkDelete,
+  kitchens,
+  activeKitchenId,
+  onCopy,
   editingFoodId
 }: IngredientsPageProps) {
   const [search, setSearch] = useState("");
@@ -58,6 +65,8 @@ export function IngredientsPage({
   const [deleteRequest, setDeleteRequest] = useState<
     { type: "single"; food: Food } | { type: "bulk"; foodIds: string[] } | null
   >(null);
+  const [isCopyOpen, setIsCopyOpen] = useState(false);
+  const copyTargets = kitchens.filter((kitchen) => kitchen.id !== activeKitchenId);
 
   useEffect(() => {
     setPage(1);
@@ -173,6 +182,15 @@ export function IngredientsPage({
             />
             <div className="inline-actions">
               <Button
+                variant="secondary"
+                type="button"
+                disabled={checkedFoodIds.length === 0 || copyTargets.length === 0}
+                onClick={() => setIsCopyOpen(true)}
+              >
+                <IconCopy aria-hidden="true" size={17} />
+                <span>Copy selected</span>
+              </Button>
+              <Button
                 className="bulk-delete-action"
                 variant="danger"
                 type="button"
@@ -243,6 +261,16 @@ export function IngredientsPage({
           }
         />
       ) : null}
+      {isCopyOpen ? <CopyToKitchenModal
+        itemCount={checkedFoodIds.length}
+        itemLabel="ingredient"
+        kitchens={copyTargets}
+        onCancel={() => setIsCopyOpen(false)}
+        onCopy={async (targetKitchenId) => {
+          await onCopy(checkedFoodIds, targetKitchenId);
+          setCheckedFoodIds([]);
+        }}
+      /> : null}
     </section>
   );
 }

@@ -8,6 +8,8 @@ export type Food = {
   unit_label: string;
   unit_weight_g: number;
   notes?: string | null;
+  is_copied?: boolean;
+  copied_from_kitchen_name?: string | null;
 };
 
 export type Ingredient = {
@@ -32,6 +34,8 @@ export type Recipe = {
   kj: number;
   protein: number;
   ingredients: Ingredient[];
+  is_copied?: boolean;
+  copied_from_kitchen_name?: string | null;
 };
 
 export type Health = {

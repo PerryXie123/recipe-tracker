@@ -8,6 +8,8 @@ export type Food = {
   unit_label: string;
   unit_weight_g: number;
   notes?: string | null;
+  is_copied?: boolean;
+  copied_from_kitchen_name?: string | null;
 };
 
 export type Ingredient = {
@@ -28,6 +30,8 @@ export type Recipe = {
   total_weight_g?: number | string | null;
   created_at?: string | null;
   ingredients: Ingredient[];
+  is_copied?: boolean;
+  copied_from_kitchen_name?: string | null;
 };
 
 export type RecipeWithTotals = Recipe & {

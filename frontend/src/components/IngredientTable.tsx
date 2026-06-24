@@ -2,6 +2,7 @@ import { formatNumber, formatUnitBasis } from "../lib/format";
 import type { Food } from "../types";
 import { Checkbox } from "./ui";
 import { Bone } from "./Skeletons";
+import { IconCopy } from "@tabler/icons-react";
 
 type IngredientTableProps = {
   foods: Food[];
@@ -45,7 +46,11 @@ export function IngredientTable({ foods, selectedFoodId, checkedFoodIds, onSelec
                   onChange={(checked) => onCheckedChange(food.id, checked)}
                 />
               </td>
-              <td>{food.name}</td>
+              <td><span className="copied-item-name">{food.name}{food.is_copied ? <span
+                className="copy-origin-icon"
+                aria-label={`Copied from ${food.copied_from_kitchen_name || "another kitchen"}`}
+                title={`Copied from ${food.copied_from_kitchen_name || "another kitchen"}`}
+              ><IconCopy size={15} /></span> : null}</span></td>
               <td>{formatNumber(food.calories_per_unit)}</td>
               <td>{formatNumber(food.kj_per_unit)}</td>
               <td>{formatNumber(food.protein_per_unit)}g</td>

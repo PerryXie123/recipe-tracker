@@ -63,6 +63,23 @@ export function getPlanningRecipes() {
   return request<Recipe[]>("/api/planning-recipes");
 }
 
+export async function copyKitchenContent(
+  sourceKitchenId: string,
+  targetKitchenId: string,
+  foodIds: string[],
+  recipeIds: string[]
+) {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase.rpc("copy_kitchen_content", {
+    p_source_kitchen_id: sourceKitchenId,
+    p_target_kitchen_id: targetKitchenId,
+    p_food_ids: foodIds,
+    p_recipe_ids: recipeIds
+  });
+  if (error) throw error;
+  return data as { ingredients: number; meals: number };
+}
+
 async function getSupabasePlanningRecipes(): Promise<Recipe[]> {
   if (!supabase) return [];
   const [recipesResult, ingredientsResult] = await Promise.all([

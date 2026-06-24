@@ -1,7 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
 export const supabaseUrl = normalizeSupabaseUrl(getEnvValue(import.meta.env.VITE_SUPABASE_URL));
-export const googleClientId = getEnvValue(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 export const supabasePublishableKey =
   getEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
   getEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY) ||
@@ -18,14 +17,11 @@ export const supabaseAuthConfigMessage = !supabaseUrl
     ? "Add VITE_SUPABASE_PUBLISHABLE_KEY to enable Google sign-in."
     : !hasBrowserSafeKey
       ? "Use the Supabase publishable/anon key, not an sb_secret key, for Google sign-in."
-      : !googleClientId
-        ? "Add VITE_GOOGLE_CLIENT_ID to enable Google sign-in."
       : null;
 
-const isSupabaseClientConfigured = Boolean(supabaseUrl && hasBrowserSafeKey);
-export const isSupabaseAuthConfigured = Boolean(isSupabaseClientConfigured && googleClientId);
+export const isSupabaseAuthConfigured = Boolean(supabaseUrl && hasBrowserSafeKey);
 
-export const supabase = isSupabaseClientConfigured
+export const supabase = isSupabaseAuthConfigured
   ? createClient(supabaseUrl as string, supabasePublishableKey as string, {
       auth: {
         autoRefreshToken: true,

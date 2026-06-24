@@ -1,6 +1,7 @@
 import type { PointerEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { IconTrash } from "@tabler/icons-react";
+import { IconCopy, IconTrash } from "@tabler/icons-react";
+import { CopyToKitchenModal } from "../components/CopyToKitchenModal";
 import { MealCard } from "../components/MealCard";
 import { MealGridSkeleton } from "../components/Skeletons";
 import { Pagination } from "../components/Pagination";
@@ -42,6 +43,9 @@ type MealsPageProps = {
   onDelete: (recipe: Recipe) => void;
   onBulkDelete: (recipeIds: string[]) => void;
   onFavoriteToggle: (recipeId: string) => void;
+  kitchens: Array<{ id: string; name: string }>;
+  activeKitchenId?: string;
+  onCopy: (recipeIds: string[], targetKitchenId: string) => Promise<void>;
 };
 
 export function MealsPage({
@@ -73,7 +77,10 @@ export function MealsPage({
   onEdit,
   onDelete,
   onBulkDelete,
-  onFavoriteToggle
+  onFavoriteToggle,
+  kitchens,
+  activeKitchenId,
+  onCopy
 }: MealsPageProps) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<LibrarySort>("created-desc");
@@ -81,6 +88,8 @@ export function MealsPage({
   const [checkedRecipeIds, setCheckedRecipeIds] = useState<string[]>([]);
   const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
   const [deleteRequest, setDeleteRequest] = useState<{ type: "single"; recipe: Recipe } | { type: "bulk"; recipeIds: string[] } | null>(null);
+  const [isCopyOpen, setIsCopyOpen] = useState(false);
+  const copyTargets = kitchens.filter((kitchen) => kitchen.id !== activeKitchenId);
 
   useEffect(() => {
     setPage(1);
@@ -201,6 +210,15 @@ export function MealsPage({
             />
             <div className="inline-actions">
               <Button
+                variant="secondary"
+                type="button"
+                disabled={checkedRecipeIds.length === 0 || copyTargets.length === 0}
+                onClick={() => setIsCopyOpen(true)}
+              >
+                <IconCopy aria-hidden="true" size={17} />
+                <span>Copy selected</span>
+              </Button>
+              <Button
                 className="bulk-delete-action"
                 variant="danger"
                 type="button"
@@ -286,6 +304,17 @@ export function MealsPage({
           }
         />
       ) : null}
+      {isCopyOpen ? <CopyToKitchenModal
+        itemCount={checkedRecipeIds.length}
+        itemLabel="meal"
+        kitchens={copyTargets}
+        copiesDependencies
+        onCancel={() => setIsCopyOpen(false)}
+        onCopy={async (targetKitchenId) => {
+          await onCopy(checkedRecipeIds, targetKitchenId);
+          setCheckedRecipeIds([]);
+        }}
+      /> : null}
     </section>
   );
 }
